@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% block title %}FloodSense Pro{% endblock %}
+{% block main_class %}home{% endblock %}
+
+{% block head %}
+<style>
+/* === Home Page Specific Styles === */
+.home {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-lg);
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+  padding: var(--space-xl) 0;
+}
+
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--c-cyan);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: var(--space-md);
+  display: inline-block;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(0, 210, 255, 0.1);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 210, 255, 0.2);
+}
+
+.hero-title {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  letter-spacing: -1px;
+  line-height: 1.1;
+  color: var(--c-text);
+  margin-bottom: var(--space-md);
+}
+
+.hero-title em {
+  color: var(--c-cyan);
+  font-style: normal;
+}
+
+.hero-subtitle {
+  font-size: 1.125rem;
+  color: var(--c-text-2);
+  max-width: 600px;
+  margin: 0 auto var(--space-lg);
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+  flex-wrap: wrap;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.feature-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  text-decoration: none;
+  color: var(--c-text);
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.feature-card:hover {
+  border-color: var(--c-border-hi);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--c-cyan);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--c-bg);
+  flex-shrink: 0;
+}
+
+.feature-content h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+  color: var(--c-text);
+}
+
+.feature-content p {
+  font-size: 0.875rem;
+  color: var(--c-text-2);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.stat-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  text-align: center;
+  transition: all var(--transition-normal);
+}
+
+.stat-card:hover {
+  border-color: var(--c-border-hi);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--c-cyan);
+  margin-bottom: var(--space-sm);
+  font-family: var(--font-mono);
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--c-text-2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.footer {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--c-border);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--c-text-3);
+  letter-spacing: 1px;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .hero {
+    padding: var(--space-lg) 0;
+  }
+  
+  .actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .features {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+  
+  .feature-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="home">
+  <!-- Hero Section -->
+  <div class="hero">
+    <div class="hero-eyebrow">Disaster Intelligence Platform</div>
+    <h1 class="hero-title">FLOOD<em>SENSE</em> PRO</h1>
+    <p class="hero-subtitle">
+      AI-powered flood risk prediction and intelligent resource allocation for disaster preparedness and response
+    </p>
+    
+    <div class="actions">
+      <a href="/citizen" class="btn btn-primary">Citizen Dashboard</a>
+      <a href="/authority" class="btn btn-secondary">Authority Command</a>
+      <a href="/simulation" class="btn btn-outline">Flood Simulation</a>
+      <a href="/map" target="_blank" class="btn btn-outline">Live Map</a>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div class="features">
+    <a href="/citizen" class="feature-card">
+      <div class="feature-icon">👥</div>
+      <div class="feature-content">
+        <h3>Citizen Dashboard</h3>
+        <p>Real-time flood risk assessment and personalized safety recommendations for residents</p>
+      </div>
+    </a>
+    
+    <a href="/authority" class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <div class="feature-content">
+        <h3>Authority Command</h3>
+        <p>Comprehensive emergency management with AI-driven resource optimization</p>
+      </div>
+    </a>
+    
+    <a href="/early-warning" class="feature-card">
+      <div class="feature-icon">⚠️</div>
+      <div class="feature-content">
+        <h3>Early Warning System</h3>
+        <p>Advanced flood prediction with 48-hour forecasting and alert management</p>
+      </div>
+    </a>
+    
+    <a href="/alert-center" class="feature-card">
+      <div class="feature-icon">🚨</div>
+      <div class="feature-content">
+        <h3>Alert Center</h3>
+        <p>Centralized alert management with multi-channel notification system</p>
+      </div>
+    </a>
+    
+    <a href="/rescue" class="feature-card">
+      <div class="feature-icon">🚑</div>
+      <div class="feature-content">
+        <h3>Rescue Finder</h3>
+        <p>Intelligent resource location and optimal routing for emergency response</p>
+      </div>
+    </a>
+    
+    <a href="/trends" class="feature-card">
+      <div class="feature-icon">📊</div>
+      <div class="feature-content">
+        <h3>Analytics & Trends</h3>
+        <p>Data-driven insights for flood pattern analysis and prediction accuracy</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Stats Section -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-number">24/7</div>
+      <div class="stat-label">Monitoring</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">AI</div>
+      <div class="stat-label">Powered</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">95%</div>
+      <div class="stat-label">Accuracy</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">0</div>
+      <div class="stat-label">Latency</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    FloodSense Pro — Disaster Intelligence Platform<br>
+    RVCE Integrated Design Project 2025-26
+  </footer>
+</section>
+{% endblock %}

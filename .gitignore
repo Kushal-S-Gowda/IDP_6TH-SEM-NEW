@@ -1,0 +1,38 @@
+# Virtual Environment
+floodsense_env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# ML Models (large files)
+ml/models/*.pkl
+
+# Generated outputs
+reports/output/
+static/risk_map.html
+
+# Database
+database/
+
+# Environment variables
+.env
+
+# VS Code
+.vscode/
+
+# Cursor IDE
+.cursor/
+
+# Logs
+logs/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Jupyter
+.ipynb_checkpoints/

@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+{% block title %}Rescue Camp Finder{% endblock %}
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+.card-dark { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 15px; padding: 25px; margin-bottom: 20px; }
+.zone-btn { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px; padding: 10px 15px; color: var(--c-text); cursor: pointer; transition: all 0.2s; margin: 4px; font-size: 0.85rem; }
+.zone-btn:hover { background: var(--c-cyan); border-color: var(--c-cyan); color: var(--c-bg); }
+.zone-btn.active { background: var(--c-green); border-color: var(--c-green); color: var(--c-bg); font-weight: 700; }
+.camp-card { background: var(--c-surface2); border: 1px solid var(--c-border); border-radius: 12px; padding: 18px; margin-bottom: 12px; transition: all 0.3s; cursor: pointer; }
+.camp-card:hover { border-color: var(--c-cyan); transform: translateX(4px); }
+.camp-card.rank-1 { border-left: 4px solid var(--c-green); }
+.camp-card.rank-2 { border-left: 4px solid var(--c-cyan); }
+.camp-card.rank-3 { border-left: 4px solid var(--c-amber); }
+.camp-card.rank-other { border-left: 4px solid var(--c-text-3); }
+.rank-badge { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.9rem; }
+.rank-1-badge { background: var(--c-green); color: var(--c-bg); }
+.rank-2-badge { background: var(--c-cyan); color: var(--c-bg); }
+.rank-3-badge { background: var(--c-amber); color: var(--c-bg); }
+.rank-other-badge { background: var(--c-text-3); }
+.service-chip { background: rgba(0,210,255,0.15); border: 1px solid var(--c-border); border-radius: 12px; padding: 3px 10px; font-size: 0.75rem; color: var(--c-text-2); margin: 2px; display: inline-block; }
+.service-chip.available { background: rgba(0,230,118,0.2); border-color: var(--c-green); color: var(--c-green); }
+.service-chip.unavailable { background: rgba(0,0,0,0.2); border-color: var(--c-text-3); color: var(--c-text-3); text-decoration: line-through; }
+.metric-box { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px; text-align: center; }
+.metric-box h4 { margin: 0; font-size: 1.3rem; font-weight: 900; color: var(--c-text); }
+.metric-box p { margin: 0; font-size: 0.75rem; color: var(--c-text-2); }
+.spinner { border: 3px solid var(--c-border); border-top-color: var(--c-cyan); border-radius: 50%; width: 35px; height: 35px; animation: spin 0.8s linear infinite; margin: 0 auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.score-bar { height: 6px; border-radius: 3px; background: var(--c-surface2); margin-top: 6px; }
+.score-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--c-cyan), var(--c-green)); transition: width 0.6s; }
+.best-tag { background: var(--c-green); border-radius: 6px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700; color: var(--c-bg); }
+.route-info { background: rgba(0,210,255,0.08); border: 1px solid var(--c-border); border-radius: 8px; padding: 10px 15px; margin-top: 10px; color: var(--c-text-2); }
+select.form-select { background: var(--c-surface); border: 1px solid var(--c-border); color: var(--c-text); border-radius: 8px; padding: 10px; }
+select.form-select:focus { background: var(--c-surface); color: var(--c-text); border-color: var(--c-cyan); box-shadow: none; }
+.rescue-page .text-center h2 { color: var(--c-green); }
+.rescue-page .text-center p { color: var(--c-text-2); }
+</style>
+{% endblock %}
+{% block main_class %}rescue-page{% endblock %}
+{% block content %}
+<div class="container py-4">
+
+    <div class="text-center mb-4">
+        <h2>&#127973; Rescue Camp &amp; Safe Zone Finder</h2>
+        <p>Find nearest rescue camps ranked by distance, travel time, capacity and available services</p>
+<div style="background:rgba(255,179,0,0.1); border:1px solid var(--c-amber); border-radius:8px; padding:8px 15px; display:inline-block; margin-top:5px;">
+    <small style="color:var(--c-amber);">
+        ⚠️ Distances are base road distances without live traffic.
+        Actual travel time may vary during flood conditions due to road closures and diversions.
+        Always verify with local authorities before evacuating.
+    </small>
+</div>
+    </div>
+
+    <div class="row">
+
+        <!-- LEFT: Location Selector -->
+        <div class="col-md-4">
+            <div class="card-dark">
+                <h5 class="mb-3" style="color:var(--c-cyan);">&#128205; Select Your Location</h5>
+
+                <label style="color:var(--c-text-2); font-size:0.85rem;">Choose your zone:</label>
+                <select class="form-select mt-2 mb-3" id="zoneSelect" onchange="onZoneChange()">
+                    <option value="">-- Select Zone --</option>
+                    <option value="Bellandur|12.9261|77.6760">Bellandur</option>
+                    <option value="Marathahalli|12.9591|77.6972">Marathahalli</option>
+                    <option value="HSR Layout|12.9116|77.6389">HSR Layout</option>
+                    <option value="Whitefield|12.9698|77.7499">Whitefield</option>
+                    <option value="Koramangala|12.9279|77.6271">Koramangala</option>
+                    <option value="BTM Layout|12.9166|77.6101">BTM Layout</option>
+                    <option value="Indiranagar|12.9719|77.6412">Indiranagar</option>
+                    <option value="Hebbal|13.0358|77.5970">Hebbal</option>
+                    <option value="Yelahanka|13.1007|77.5963">Yelahanka</option>
+                    <option value="Electronic City|12.8399|77.6770">Electronic City</option>
+                </select>
+
+                <label style="color:#90caf9; font-size:0.85rem;" class="mt-2">Or filter by service needed:</label>
+                <div class="mt-2" id="filterChips">
+                    <button class="zone-btn active" onclick="toggleFilter(this,'all')">All</button>
+                    <button class="zone-btn" onclick="toggleFilter(this,'medical')">🏥 Medical</button>
+                    <button class="zone-btn" onclick="toggleFilter(this,'food')">🍱 Food</button>
+                    <button class="zone-btn" onclick="toggleFilter(this,'shelter')">🏕️ Shelter</button>
+                    <button class="zone-btn" onclick="toggleFilter(this,'boats')">🚤 Boats</button>
+                    <button class="zone-btn" onclick="toggleFilter(this,'helicopter')">🚁 Helipad</button>
+                </div>
+
+                <hr style="border-color:#1565c0; margin:20px 0;">
+
+                <!-- Sort Options -->
+                <label style="color:#90caf9; font-size:0.85rem;">Sort results by:</label>
+                <select class="form-select mt-2" id="sortSelect" onchange="sortAndRender()">
+                    <option value="score">⭐ Best Overall Score</option>
+                    <option value="distance">📏 Shortest Distance</option>
+                    <option value="duration">⏱️ Fastest Travel Time</option>
+                    <option value="capacity">👥 Highest Capacity</option>
+                    <option value="elevation">⛰️ Highest Elevation</option>
+                </select>
+
+                <hr style="border-color:#1565c0; margin:20px 0;">
+
+                <!-- Summary -->
+                <div id="summaryBox" style="display:none;">
+                    <h6 style="color:#4fc3f7;">📊 Search Summary</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="metric-box">
+                                <h4 style="color:#28a745;" id="sumCamps">—</h4>
+                                <p>Camps Found</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="metric-box">
+                                <h4 style="color:#4fc3f7;" id="sumClosest">—</h4>
+                                <p>Closest (km)</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="metric-box">
+                                <h4 style="color:#ffc107;" id="sumFastest">—</h4>
+                                <p>Fastest (min)</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="metric-box">
+                                <h4 style="color:#ce93d8;" id="sumCapacity">—</h4>
+                                <p>Total Capacity</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Results -->
+        <div class="col-md-8">
+
+            <!-- Placeholder -->
+            <div id="placeholder" class="card-dark text-center py-5">
+                <div style="font-size:3rem;">🏥</div>
+                <h5 style="color:#4fc3f7;" class="mt-3">Select Your Location</h5>
+                <p style="color:#64b5f6;">Choose a zone on the left to find nearest rescue camps<br>ranked by distance, time and available services</p>
+            </div>
+
+            <!-- Loading -->
+            <div id="loadingBox" style="display:none;" class="card-dark text-center py-5">
+                <div class="spinner"></div>
+                <p style="color:#4fc3f7;" class="mt-3">Calculating routes via OpenRouteService API...</p>
+                <small style="color:#64b5f6;">Fetching real road distances and travel times</small>
+            </div>
+
+            <!-- Results -->
+            <div id="resultsBox" style="display:none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 style="color:#80cbc4; margin:0;" id="resultsTitle">Rescue Camps</h5>
+                    <small style="color:#64b5f6;" id="resultsSubtitle"></small>
+                </div>
+                <div id="campCards"></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+let allCamps = [];
+let activeFilter = 'all';
+
+// Safe zones with services data
+const SAFE_ZONES = [
+    {
+        name: "Nandi Hills",
+        lat: 13.3702, lon: 77.6835,
+        elevation: 1478, capacity: 10000,
+        services: ["shelter","food","medical"],
+        has_medical: true, has_food: true,
+        has_shelter: true, has_boats: false,
+        has_helicopter: true,
+        description: "Highest safe point near Bengaluru. Primary evacuation destination for extreme floods.",
+        occupancy_pct: 15
+    },
+    {
+        name: "Lalbagh Botanical Garden",
+        lat: 12.9507, lon: 77.5848,
+        elevation: 921, capacity: 5000,
+        services: ["shelter","food","medical","boats"],
+        has_medical: true, has_food: true,
+        has_shelter: true, has_boats: true,
+        has_helicopter: false,
+        description: "Central Bengaluru relief hub. BBMP managed. Medical teams on standby.",
+        occupancy_pct: 30
+    },
+    {
+        name: "Palace Grounds",
+        lat: 13.0000, lon: 77.5800,
+        elevation: 915, capacity: 8000,
+        services: ["shelter","food","medical","boats","helicopter"],
+        has_medical: true, has_food: true,
+        has_shelter: true, has_boats: true,
+        has_helicopter: true,
+        description: "Large open grounds. Helipad available. Army coordination point.",
+        occupancy_pct: 20
+    },
+    {
+        name: "NICE Grounds Bidadi",
+        lat: 12.7980, lon: 77.3940,
+        elevation: 850, capacity: 6000,
+        services: ["shelter","food","boats"],
+        has_medical: false, has_food: true,
+        has_shelter: true, has_boats: true,
+        has_helicopter: false,
+        description: "South-west Bengaluru relief point. Accessible via NICE Road.",
+        occupancy_pct: 10
+    },
+    {
+        name: "NIMHANS Convention Centre",
+        lat: 12.9407, lon: 77.5940,
+        elevation: 920, capacity: 4000,
+        services: ["shelter","food","medical"],
+        has_medical: true, has_food: true,
+        has_shelter: true, has_boats: false,
+        has_helicopter: false,
+        description: "BBMP designated shelter. Adjacent to NIMHANS hospital for medical support.",
+        occupancy_pct: 25
+    },
+    {
+        name: "St. John's Medical College",
+        lat: 12.9456, lon: 77.6188,
+        elevation: 918, capacity: 2000,
+        services: ["medical","food"],
+        has_medical: true, has_food: true,
+        has_shelter: false, has_boats: false,
+        has_helicopter: false,
+        description: "Emergency medical facility. Priority for injured and critically ill evacuees.",
+        occupancy_pct: 40
+    },
+    {
+        name: "Manipal Hospital",
+        lat: 12.9578, lon: 77.6430,
+        elevation: 916, capacity: 1500,
+        services: ["medical"],
+        has_medical: true, has_food: false,
+        has_shelter: false, has_boats: false,
+        has_helicopter: true,
+        description: "Trauma and emergency care centre. Air ambulance helipad available.",
+        occupancy_pct: 50
+    },
+    {
+        name: "BBMP Relief Camp 1",
+        lat: 13.0200, lon: 77.5500,
+        elevation: 930, capacity: 3000,
+        services: ["shelter","food","medical","boats"],
+        has_medical: true, has_food: true,
+        has_shelter: true, has_boats: true,
+        has_helicopter: false,
+        description: "North Bengaluru BBMP camp. Rescue boats stationed for water rescue.",
+        occupancy_pct: 20
+    },
+    {
+        name: "BBMP Relief Camp 2",
+        lat: 12.9100, lon: 77.6100,
+        elevation: 910, capacity: 3000,
+        services: ["shelter","food","medical"],
+        has_medical: true, has_food: true,
+        has_shelter: true, has_boats: false,
+        has_helicopter: false,
+        description: "South Bengaluru BBMP camp. Closest to Bellandur and HSR Layout zones.",
+        occupancy_pct: 35
+    },
+    {
+        name: "BBMP Relief Camp 3",
+        lat: 12.9800, lon: 77.7200,
+        elevation: 905, capacity: 3000,
+        services: ["shelter","food","boats"],
+        has_medical: false, has_food: true,
+        has_shelter: true, has_boats: true,
+        has_helicopter: false,
+        description: "East Bengaluru camp. Closest to Whitefield and Marathahalli zones.",
+        occupancy_pct: 15
+    }
+];
+
+const SERVICE_ICONS = {
+    medical: "🏥", food: "🍱",
+    shelter: "🏕️", boats: "🚤", helicopter: "🚁"
+};
+
+function toggleFilter(btn, filter) {
+    document.querySelectorAll("#filterChips .zone-btn")
+            .forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeFilter = filter;
+    if (allCamps.length > 0) sortAndRender();
+}
+
+function onZoneChange() {
+    const val = document.getElementById("zoneSelect").value;
+    if (!val) return;
+    const [name, lat, lon] = val.split("|");
+    fetchCamps(name, parseFloat(lat), parseFloat(lon));
+}
+
+async function fetchCamps(zoneName, lat, lon) {
+    document.getElementById("placeholder").style.display  = "none";
+    document.getElementById("loadingBox").style.display   = "block";
+    document.getElementById("resultsBox").style.display   = "none";
+    document.getElementById("summaryBox").style.display   = "none";
+
+    try {
+        const res  = await fetch(
+            `/api/rescue/camps?lat=${lat}&lon=${lon}&zone=${encodeURIComponent(zoneName)}`
+        );
+        const data = await res.json();
+        allCamps   = data.camps;
+
+        // Update summary
+        const totalCap = allCamps.reduce((s,c) => s + c.capacity, 0);
+        document.getElementById("sumCamps").textContent   = allCamps.length;
+        document.getElementById("sumClosest").textContent =
+            allCamps[0]?.road_distance_km || "—";
+        document.getElementById("sumFastest").textContent =
+            Math.min(...allCamps.map(c => c.road_duration_min)).toFixed(0) + " min";
+        document.getElementById("sumCapacity").textContent =
+            (totalCap/1000).toFixed(0) + "K";
+        document.getElementById("summaryBox").style.display = "block";
+
+        document.getElementById("resultsTitle").textContent =
+            `Rescue Camps from ${zoneName}`;
+        document.getElementById("resultsSubtitle").textContent =
+            `${allCamps.length} locations sorted by best overall score`;
+
+        sortAndRender();
+
+    } catch(err) {
+        document.getElementById("loadingBox").innerHTML =
+            '<p style="color:#ef5350;">Failed to fetch routes. Check server.</p>';
+    }
+
+    document.getElementById("loadingBox").style.display = "none";
+    document.getElementById("resultsBox").style.display = "block";
+}
+
+function sortAndRender() {
+    const sortBy = document.getElementById("sortSelect").value;
+
+    let filtered = [...allCamps];
+
+    // Apply service filter
+    if (activeFilter !== "all") {
+        filtered = filtered.filter(c => c.services.includes(activeFilter));
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+        if (sortBy === "distance")  return a.road_distance_km - b.road_distance_km;
+        if (sortBy === "duration")  return a.road_duration_min - b.road_duration_min;
+        if (sortBy === "capacity")  return b.capacity - a.capacity;
+        if (sortBy === "elevation") return b.elevation - a.elevation;
+        return b.overall_score - a.overall_score; // default: score
+    });
+
+    renderCamps(filtered);
+}
+
+function renderCamps(camps) {
+    if (camps.length === 0) {
+        document.getElementById("campCards").innerHTML =
+            '<div class="card-dark text-center py-4" style="color:#64b5f6;">No camps found with selected filter.</div>';
+        return;
+    }
+
+    let html = "";
+    camps.forEach((camp, i) => {
+        const rank = i + 1;
+        const rankClass = rank === 1 ? "rank-1" :
+                          rank === 2 ? "rank-2" :
+                          rank === 3 ? "rank-3" : "rank-other";
+        const badgeClass = rank === 1 ? "rank-1-badge" :
+                           rank === 2 ? "rank-2-badge" :
+                           rank === 3 ? "rank-3-badge" : "rank-other-badge";
+        const available = camp.occupancy_pct < 80;
+        const availColor = available ? "#28a745" : "#dc3545";
+        const availText  = available ? "AVAILABLE" : "NEAR FULL";
+        const spotsLeft  = Math.round(camp.capacity * (1 - camp.occupancy_pct/100));
+
+        // Service chips
+        const allServices = ["medical","food","shelter","boats","helicopter"];
+        let serviceHtml = "";
+        allServices.forEach(s => {
+            const has = camp.services.includes(s);
+            serviceHtml += `<span class="service-chip ${has ? 'available' : 'unavailable'}">
+                ${SERVICE_ICONS[s]} ${s.charAt(0).toUpperCase() + s.slice(1)}
+            </span>`;
+        });
+
+        html += `
+        <div class="camp-card ${rankClass}" onclick="selectCamp('${camp.name}')">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="rank-badge ${badgeClass}">${rank}</span>
+                    <div>
+                        <strong style="font-size:1rem;">${camp.name}</strong>
+                        ${rank === 1 ? '<span class="best-tag ms-2">⭐ BEST OPTION</span>' : ""}
+                        <div style="color:#64b5f6; font-size:0.78rem; margin-top:2px;">
+                            ⛰️ ${camp.elevation}m elevation
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <span style="color:${availColor}; font-weight:700; font-size:0.82rem;">
+                        ● ${availText}
+                    </span>
+                    <div style="color:#90caf9; font-size:0.75rem;">
+                        ${spotsLeft.toLocaleString()} spots left
+                    </div>
+                </div>
+            </div>
+
+            <!-- Route metrics -->
+            <div class="row g-2 mt-2">
+                <div class="col-3">
+                    <div class="metric-box">
+                        <h4 style="color:#4fc3f7; font-size:1.1rem;">
+                            ${camp.road_distance_km} km
+                        </h4>
+                        <p>Road Distance</p>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="metric-box">
+                        <h4 style="color:#ffc107; font-size:1.1rem;">
+                            ${camp.road_duration_min} min
+                        </h4>
+                        <p>Travel Time</p>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="metric-box">
+                        <h4 style="color:#ce93d8; font-size:1.1rem;">
+                            ${(camp.capacity/1000).toFixed(1)}K
+                        </h4>
+                        <p>Capacity</p>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="metric-box">
+                        <h4 style="color:#${camp.occupancy_pct < 50 ? '28a745' :
+                                            camp.occupancy_pct < 80 ? 'ffc107' : 'dc3545'};
+                                   font-size:1.1rem;">
+                            ${camp.occupancy_pct}%
+                        </h4>
+                        <p>Occupancy</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overall score bar -->
+            <div class="d-flex align-items-center gap-2 mt-2">
+                <span style="color:#90caf9; font-size:0.78rem; width:80px;">
+                    Overall Score
+                </span>
+                <div class="score-bar" style="flex:1;">
+                    <div class="score-fill" style="width:${camp.overall_score}%;"></div>
+                </div>
+                <span style="color:#4fc3f7; font-size:0.82rem; font-weight:700; width:35px;">
+                    ${camp.overall_score}
+                </span>
+            </div>
+
+            <!-- Services -->
+            <div class="mt-2">${serviceHtml}</div>
+
+            <!-- Description -->
+            <div class="route-info mt-2">
+                <small style="color:#90caf9;">ℹ️ ${camp.description}</small>
+            </div>
+        </div>`;
+    });
+
+    document.getElementById("campCards").innerHTML = html;
+}
+
+function selectCamp(name) {
+    // Highlight selected
+    document.querySelectorAll(".camp-card").forEach(c => {
+        c.style.background = "#050e1a";
+    });
+    event.currentTarget.style.background = "rgba(21,101,192,0.2)";
+}
+</script>
+{% endblock %}

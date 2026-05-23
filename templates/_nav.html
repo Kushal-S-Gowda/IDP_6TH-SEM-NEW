@@ -1,0 +1,44 @@
+<nav class="nav">
+  <a href="/" class="nav-brand">
+    <div class="nav-logo">&#127754;</div>
+    <div class="nav-name">FLOOD<em>SENSE</em> PRO</div>
+  </a>
+
+  <ul class="nav-tabs">
+    <li><a href="/" class="{{ 'active' if active_page == 'home' else '' }}">Home</a></li>
+    <li><a href="/citizen" class="{{ 'active' if active_page == 'citizen' else '' }}">Citizen</a></li>
+
+    <li>
+      <button class="ndrop-btn ndrop-auth {{ 'active' if active_page in ['authority','early_warning','alert'] else '' }}"
+              onclick="fsToggleDrop(this)">
+        Authority <span class="ndrop-arrow">&#9660;</span>
+      </button>
+      <div class="ndrop ndrop-auth">
+        <a href="/authority" class="{{ 'active' if active_page == 'authority' else '' }}">Dashboard</a>
+        <a href="/early-warning" class="{{ 'active' if active_page == 'early_warning' else '' }}">Early Warning</a>
+        <a href="/alert-center" class="{{ 'active' if active_page == 'alert' else '' }}">Alert Center</a>
+      </div>
+    </li>
+
+    <li><a href="/rescue" class="t-rescue {{ 'active' if active_page == 'rescue' else '' }}">Rescue</a></li>
+
+    <li>
+      <button class="ndrop-btn {{ 'active' if active_page in ['simulation','fire'] else '' }}"
+              onclick="fsToggleDrop(this)">
+        Simulations <span class="ndrop-arrow">&#9660;</span>
+      </button>
+      <div class="ndrop">
+        <a href="/simulation" class="{{ 'active' if active_page == 'simulation' else '' }}">Flood Simulation</a>
+        <a href="/fire-simulation" class="{{ 'active' if active_page == 'fire' else '' }}">Fire Spread</a>
+      </div>
+    </li>
+
+    <li><a href="/trends" class="t-trends {{ 'active' if active_page == 'trends' else '' }}">Trends</a></li>
+    <li><a href="/map" target="_blank">Live Map</a></li>
+  </ul>
+
+  <div class="nav-right">
+    <div class="live-dot">LIVE</div>
+    <div id="clock">--:--:--</div>
+  </div>
+</nav>

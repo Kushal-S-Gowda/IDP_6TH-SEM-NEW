@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+{% block title %}Citizen Dashboard{% endblock %}
+{% block main_class %}citizen-dashboard{% endblock %}
+
+{% block head %}
+<style>
+/* === Citizen Dashboard Styles === */
+.citizen-dashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-xl);
+}
+
+.dashboard-header {
+  margin-bottom: var(--space-xl);
+}
+
+.header-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--c-text);
+  margin-bottom: var(--space-sm);
+}
+
+.header-subtitle {
+  font-size: 1rem;
+  color: var(--c-text-2);
+  margin-bottom: var(--space-lg);
+}
+
+.risk-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.risk-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  text-align: center;
+  transition: all var(--transition-normal);
+}
+
+.risk-card:hover {
+  border-color: var(--c-border-hi);
+  box-shadow: var(--shadow-md);
+}
+
+.risk-level {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: var(--space-sm);
+  font-family: var(--font-mono);
+}
+
+.risk-low { color: var(--c-green); }
+.risk-medium { color: var(--c-amber); }
+.risk-high { color: var(--c-red); }
+.risk-extreme { color: var(--c-red); animation: pulse 1.5s infinite; }
+
+.risk-label {
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--space-sm);
+}
+
+.risk-description {
+  font-size: 0.875rem;
+  color: var(--c-text-2);
+  line-height: 1.5;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+
+.info-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+.info-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+  color: var(--c-text);
+}
+
+.recommendations {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+.recommendations h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+  color: var(--c-text);
+}
+
+.recommendation-list {
+  list-style: none;
+}
+
+.recommendation-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.recommendation-list li:last-child {
+  border-bottom: none;
+}
+
+.recommendation-icon {
+  width: 24px;
+  height: 24px;
+  background: var(--c-cyan);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--c-bg);
+  flex-shrink: 0;
+}
+
+.recommendation-text {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--c-text-2);
+  line-height: 1.5;
+}
+
+.emergency-contacts {
+  background: var(--c-surface2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-top: var(--space-xl);
+}
+
+.emergency-contacts h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+  color: var(--c-text);
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.contact-item:hover {
+  border-color: var(--c-border-hi);
+  background: rgba(0, 210, 255, 0.05);
+}
+
+.contact-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--c-red);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--c-bg);
+}
+
+.contact-details h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+  color: var(--c-text);
+}
+
+.contact-details p {
+  font-size: 0.875rem;
+  color: var(--c-text-2);
+  margin: 0;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .citizen-dashboard {
+    padding: var(--space-md);
+  }
+  
+  .risk-overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .risk-overview {
+    grid-template-columns: 1fr;
+  }
+  
+  .recommendation-list li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="citizen-dashboard">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1 class="header-title">Citizen Safety Dashboard</h1>
+    <p class="header-subtitle">
+      Real-time flood risk assessment and personalized safety recommendations for your area
+    </p>
+  </div>
+
+  <!-- Risk Overview -->
+  <div class="risk-overview">
+    <div class="risk-card">
+      <div class="risk-level risk-low">LOW</div>
+      <div class="risk-label">Current Risk Level</div>
+      <div class="risk-description">
+        Your area is currently safe. Continue normal activities and stay informed.
+      </div>
+    </div>
+    
+    <div class="risk-card">
+      <div class="risk-level risk-medium">MEDIUM</div>
+      <div class="risk-label">24h Forecast</div>
+      <div class="risk-description">
+        Moderate rainfall expected. Monitor weather updates and prepare contingency plans.
+      </div>
+    </div>
+    
+    <div class="risk-card">
+      <div class="risk-level risk-high">HIGH</div>
+      <div class="risk-label">Zone Alert Status</div>
+      <div class="risk-description">
+        2 zones under alert. Follow evacuation protocols if in affected areas.
+      </div>
+    </div>
+    
+    <div class="risk-card">
+      <div class="risk-level risk-low">SAFE</div>
+      <div class="risk-label">Emergency Routes</div>
+      <div class="risk-description">
+        All evacuation routes are clear and accessible. Plan your route in advance.
+      </div>
+    </div>
+  </div>
+
+  <!-- Information Grid -->
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>📍 Location Status</h3>
+      <p style="font-size: 1rem; color: var(--c-text); margin-bottom: var(--space-md);">
+        <strong>Current Location:</strong> Koramangala, Bangalore<br>
+        <strong>Zone Classification:</strong> Residential Zone B<br>
+        <strong>Elevation:</strong> 920m above sea level
+      </p>
+      <div style="margin-top: var(--space-md);">
+        <a href="/map" class="btn btn-primary" target="_blank">View Live Map</a>
+      </div>
+    </div>
+    
+    <div class="info-card">
+      <h3>🌡️ Weather Update</h3>
+      <p style="font-size: 1rem; color: var(--c-text); margin-bottom: var(--space-md);">
+        <strong>Current:</strong> Partly Cloudy, 28°C<br>
+        <strong>Humidity:</strong> 65%<br>
+        <strong>Wind Speed:</strong> 12 km/h<br>
+        <strong>Last Updated:</strong> 2 minutes ago
+      </p>
+      <div style="margin-top: var(--space-md);">
+        <a href="/early-warning" class="btn btn-outline">Detailed Forecast</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Safety Recommendations -->
+  <div class="recommendations">
+    <h3>🛡️ Safety Recommendations</h3>
+    <ul class="recommendation-list">
+      <li>
+        <div class="recommendation-icon">✓</div>
+        <div class="recommendation-text">
+          Keep emergency supplies ready - water, food, medications, and important documents
+        </div>
+      </li>
+      <li>
+        <div class="recommendation-icon">⚠️</div>
+        <div class="recommendation-text">
+          Avoid low-lying areas and waterlogged roads. Use elevated routes when traveling
+        </div>
+      </li>
+      <li>
+        <div class="recommendation-icon">📱</div>
+        <div class="recommendation-text">
+          Keep phones charged and emergency apps downloaded. Enable emergency alerts
+        </div>
+      </li>
+      <li>
+        <div class="recommendation-icon">👥</div>
+        <div class="recommendation-text">
+          Stay informed through official channels. Follow evacuation orders immediately
+        </div>
+      </li>
+      <li>
+        <div class="recommendation-icon">🏠</div>
+        <div class="recommendation-text">
+          Secure your home - move valuables to higher ground, disconnect utilities if needed
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Emergency Contacts -->
+  <div class="emergency-contacts">
+    <h3>🚨 Emergency Contacts</h3>
+    <div class="contact-grid">
+      <div class="contact-item">
+        <div class="contact-icon">📞</div>
+        <div class="contact-details">
+          <h4>Emergency Control</h4>
+          <p>108 - Disaster Management</p>
+        </div>
+      </div>
+      
+      <div class="contact-item">
+        <div class="contact-icon">🚑</div>
+        <div class="contact-details">
+          <h4>Medical Emergency</h4>
+          <p>102 - Ambulance Services</p>
+        </div>
+      </div>
+      
+      <div class="contact-item">
+        <div class="contact-icon">🔥</div>
+        <div class="contact-details">
+          <h4>Fire Emergency</h4>
+          <p>101 - Fire Department</p>
+        </div>
+      </div>
+      
+      <div class="contact-item">
+        <div class="contact-icon">👮</div>
+        <div class="contact-details">
+          <h4>Police Emergency</h4>
+          <p>100 - Police Services</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

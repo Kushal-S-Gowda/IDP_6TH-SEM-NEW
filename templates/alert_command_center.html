@@ -1,0 +1,1231 @@
+{% extends "base.html" %}
+{% block title %}Unified Alert Command Center{% endblock %}
+{% block head %}
+<style>
+:root{--or:#ff6f00;--fire:#ff5500;--fire2:#ff2200;--smoke:#8b7355;}
+/* DISASTER TYPE TABS */
+.dtype-bar{display:flex;align-items:stretch;border-bottom:2px solid var(--bd);background:rgba(7,21,37,.9);}
+.dtype-tab{display:flex;align-items:center;gap:10px;padding:0 28px;height:50px;cursor:pointer;
+  font-family:var(--fu);font-weight:700;font-size:.9rem;letter-spacing:1px;text-transform:uppercase;
+  color:var(--t3);border-bottom:3px solid transparent;transition:all .2s;margin-bottom:-2px;}
+.dtype-tab:hover{color:var(--t2);}
+.dtype-tab.flood-active{color:var(--cy);border-bottom-color:var(--cy);background:rgba(0,210,255,.04);}
+.dtype-tab.fire-active{color:var(--fire);border-bottom-color:var(--fire);background:rgba(255,85,0,.04);}
+.dtype-tab .tab-icon{font-size:1.1rem;}
+.dtype-tab .tab-badge{font-family:var(--fm);font-size:.5rem;padding:2px 6px;border-radius:10px;font-weight:700;}
+.flood-badge{background:rgba(0,210,255,.1);color:var(--cy);border:1px solid rgba(0,210,255,.2);}
+.fire-badge{background:rgba(255,85,0,.1);color:var(--fire);border:1px solid rgba(255,85,0,.2);}
+.dtype-sep{width:1px;background:var(--bd);margin:10px 0;}
+.tab-status-right{margin-left:auto;display:flex;align-items:center;gap:10px;padding:0 20px;}
+.sys-pill{font-family:var(--fm);font-size:.58rem;padding:5px 12px;border-radius:3px;border:1px solid;display:flex;align-items:center;gap:6px;}
+.sys-pill::before{content:'';width:5px;height:5px;border-radius:50%;animation:blink .9s infinite;}
+.sp-flood{border-color:rgba(0,210,255,.25);color:var(--cy);}
+.sp-flood::before{background:var(--cy);}
+.sp-fire{border-color:rgba(255,85,0,.3);color:var(--fire);}
+.sp-fire::before{background:var(--fire);}
+
+/* PANELS */
+.panel-flood{display:block;}
+.panel-fire{display:none;}
+
+/* PIPELINE STRIP */
+.pipeline{padding:0 20px;border-bottom:1px solid var(--bd);background:rgba(7,21,37,.8);
+  display:flex;align-items:center;overflow-x:auto;height:52px;gap:0;flex-shrink:0;}
+.pl-node{display:flex;align-items:center;gap:7px;padding:0 14px;font-family:var(--fm);font-size:.57rem;
+  letter-spacing:.5px;text-transform:uppercase;border-top:2px solid transparent;height:52px;
+  transition:all .4s;white-space:nowrap;flex-shrink:0;}
+.pl-node.done{border-top-color:var(--gn);color:var(--gn);}
+.pl-node.active{border-top-color:var(--am);color:var(--am);animation:pp 1s infinite;}
+.pl-node.fire-done{border-top-color:var(--fire);color:var(--fire);}
+.pl-node.fire-active{border-top-color:var(--am);color:var(--am);animation:pp .8s infinite;}
+.pl-node.idle{color:var(--t3);}
+@keyframes pp{0%,100%{opacity:1}50%{opacity:.4}}
+.pl-num{width:18px;height:18px;border-radius:50%;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:.52rem;font-weight:700;flex-shrink:0;}
+.pl-arr{font-size:.65rem;color:var(--t3);padding:0 4px;}
+
+/* STATS */
+.stats-strip{display:grid;gap:1px;background:var(--bd);border-bottom:1px solid var(--bd);}
+.stats-flood{grid-template-columns:repeat(5,1fr);}
+.stats-fire{grid-template-columns:repeat(6,1fr);}
+.sc{background:var(--bg);padding:12px 16px;text-align:center;}
+.sv{font-family:var(--fu);font-weight:700;font-size:1.7rem;letter-spacing:-1px;line-height:1;}
+.sl{font-family:var(--fm);font-size:.5rem;color:var(--t3);text-transform:uppercase;margin-top:3px;}
+
+/* MAIN BODY GRID */
+.body-grid{display:grid;grid-template-columns:1fr 320px 280px;gap:1px;background:var(--bd);}
+.sec{background:var(--sf);padding:14px 18px;}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sec-title{font-family:var(--fm);font-size:.55rem;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;
+  display:flex;align-items:center;gap:7px;}
+.sec-title::before{content:'';width:3px;height:10px;border-radius:1px;}
+.st-cy::before{background:var(--cy);}
+.st-rd::before{background:var(--rd);}
+.st-gn::before{background:var(--gn);}
+.st-am::before{background:var(--am);}
+.st-fire::before{background:var(--fire);}
+.st-vi::before{background:var(--vi);}
+
+/* ZONE CARDS */
+.zones-list{display:flex;flex-direction:column;gap:5px;}
+.zc{background:var(--sf2);border:1px solid var(--bd);border-radius:4px;padding:9px 12px;
+  display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;
+  position:relative;overflow:hidden;cursor:pointer;transition:border-color .4s;}
+.zc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;transition:background .4s;}
+.zc.zl::before{background:var(--gn);}
+.zc.zm::before{background:var(--am);}
+.zc.zh::before{background:var(--or);}
+.zc.ze{border-color:rgba(255,45,85,.4);animation:zfl 1.2s infinite;}
+.zc.ze::before{background:var(--rd);}
+.zc.zf-low::before{background:var(--gn);}
+.zc.zf-mod::before{background:var(--am);}
+.zc.zf-high{border-color:rgba(255,111,0,.3);}
+.zc.zf-high::before{background:var(--or);}
+.zc.zf-ext{border-color:rgba(255,85,0,.5);animation:zff 1s infinite;}
+.zc.zf-ext::before{background:var(--fire);}
+@keyframes zfl{0%,100%{border-color:rgba(255,45,85,.15)}50%{border-color:rgba(255,45,85,.5)}}
+@keyframes zff{0%,100%{border-color:rgba(255,85,0,.2)}50%{border-color:rgba(255,85,0,.6)}}
+.zc-name{font-family:var(--fu);font-weight:700;font-size:.86rem;}
+.zc-meta{font-family:var(--fm);font-size:.52rem;color:var(--t3);margin-top:2px;}
+.zc-meta b{color:var(--t2);}
+.rb{font-family:var(--fm);font-size:.56rem;font-weight:700;padding:2px 8px;border-radius:3px;text-transform:uppercase;}
+.rb-low{background:rgba(0,230,118,.08);color:var(--gn);border:1px solid rgba(0,230,118,.15);}
+.rb-med{background:rgba(255,179,0,.08);color:var(--am);border:1px solid rgba(255,179,0,.15);}
+.rb-high{background:rgba(255,111,0,.08);color:var(--or);border:1px solid rgba(255,111,0,.15);}
+.rb-ext{background:rgba(255,45,85,.1);color:var(--rd);border:1px solid rgba(255,45,85,.2);}
+.rb-fmod{background:rgba(255,179,0,.08);color:var(--am);border:1px solid rgba(255,179,0,.15);}
+.rb-fhigh{background:rgba(255,111,0,.08);color:var(--or);border:1px solid rgba(255,111,0,.15);}
+.rb-fext{background:rgba(255,85,0,.1);color:var(--fire);border:1px solid rgba(255,85,0,.2);}
+.abtn{font-family:var(--fm);font-size:.53rem;padding:3px 9px;border-radius:3px;cursor:pointer;
+  border:1px solid rgba(255,45,85,.3);background:rgba(255,45,85,.06);color:var(--rd);transition:all .2s;white-space:nowrap;}
+.abtn:hover{background:rgba(255,45,85,.15);}
+.abtn.sent{border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.06);color:var(--gn);}
+.abtn.fire-btn{border-color:rgba(255,85,0,.3);background:rgba(255,85,0,.06);color:var(--fire);}
+.abtn.fire-btn:hover{background:rgba(255,85,0,.15);}
+
+/* FIRE PARAMETER GAUGES */
+.fire-params-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px;}
+.fparam{background:var(--sf2);border:1px solid var(--bd);border-radius:4px;padding:10px 12px;transition:all .4s;}
+.fparam.fp-warn{border-color:rgba(255,179,0,.35);background:rgba(255,179,0,.03);}
+.fparam.fp-danger{border-color:rgba(255,85,0,.45);background:rgba(255,85,0,.04);}
+.fparam.fp-critical{border-color:rgba(255,45,85,.5);background:rgba(255,45,85,.05);animation:fpc .8s infinite;}
+@keyframes fpc{0%,100%{opacity:1}50%{opacity:.7}}
+.fp-label{font-family:var(--fm);font-size:.51rem;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.fp-val{font-family:var(--fu);font-weight:700;font-size:1.3rem;letter-spacing:-.5px;line-height:1;}
+.fp-unit{font-size:.6rem;font-weight:400;color:var(--t3);}
+.fp-thr{font-family:var(--fm);font-size:.49rem;color:var(--t3);margin-top:3px;}
+.fp-bar{height:3px;background:rgba(0,0,0,.3);border-radius:2px;margin-top:5px;overflow:hidden;}
+.fp-fill{height:100%;border-radius:2px;transition:width .8s ease,background .4s;}
+
+/* FWI GAUGE - big circular */
+.fwi-ring{width:110px;height:110px;position:relative;margin:0 auto 12px;}
+.fwi-ring svg{transform:rotate(-90deg);}
+.fwi-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.fwi-val{font-family:var(--fu);font-weight:700;font-size:1.8rem;letter-spacing:-2px;line-height:1;}
+.fwi-label{font-family:var(--fm);font-size:.45rem;color:var(--t3);text-transform:uppercase;margin-top:2px;}
+
+/* CHANNEL CARDS */
+.ch-card{background:var(--sf2);border:1px solid var(--bd);border-radius:4px;padding:10px 12px;
+  margin-bottom:6px;display:flex;align-items:center;gap:10px;transition:all .3s;}
+.ch-card.firing{border-color:rgba(255,179,0,.4);animation:cfiring .5s 3;}
+.ch-card.done{border-color:rgba(0,230,118,.25);background:rgba(0,230,118,.02);}
+.ch-card.fire-done{border-color:rgba(255,85,0,.3);background:rgba(255,85,0,.02);}
+@keyframes cfiring{0%,100%{opacity:1}50%{opacity:.55}}
+.ch-icon{font-size:1.2rem;flex-shrink:0;}
+.ch-info{flex:1;}
+.ch-name{font-family:var(--fu);font-weight:700;font-size:.85rem;}
+.ch-stat{font-family:var(--fm);font-size:.51rem;color:var(--t3);margin-top:2px;}
+.ch-count{font-family:var(--fm);font-size:1rem;font-weight:700;min-width:55px;text-align:right;transition:color .3s;}
+.ch-bar{height:2px;background:rgba(0,0,0,.3);border-radius:1px;margin-top:5px;}
+.ch-fill{height:100%;border-radius:1px;width:0%;transition:width 2s ease;}
+.dbtn{width:100%;border:none;border-radius:4px;padding:11px;font-family:var(--fu);font-weight:700;
+  font-size:.82rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-top:5px;}
+.dbtn-flood{background:var(--rd);color:#fff;}
+.dbtn-flood:hover{background:#ff4466;box-shadow:0 4px 20px rgba(255,45,85,.3);}
+.dbtn-fire{background:var(--fire);color:#fff;}
+.dbtn-fire:hover{background:#ff7722;box-shadow:0 4px 20px rgba(255,85,0,.3);}
+.dbtn:disabled{opacity:.38;cursor:not-allowed;background:var(--t3)!important;}
+.dbtn.done-flood{background:var(--gn);color:#000;}
+.dbtn.done-fire{background:var(--fire);color:#fff;opacity:.7;}
+
+/* PHONE / SMS PREVIEW */
+.phone-frame{background:#111827;border:2px solid #374151;border-radius:24px;padding:20px 14px;max-width:240px;margin:0 auto;}
+.phone-notch{width:50px;height:7px;background:#374151;border-radius:4px;margin:0 auto 14px;}
+.notif-card{background:rgba(255,255,255,.08);border-radius:10px;padding:10px;border:1px solid rgba(255,255,255,.08);}
+.notif-app{display:flex;align-items:center;gap:7px;margin-bottom:7px;}
+.notif-app-icon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;}
+.ni-flood{background:linear-gradient(135deg,var(--rd),var(--am));}
+.ni-fire{background:linear-gradient(135deg,var(--fire),var(--fire2));}
+.notif-app-name{font-size:10px;color:rgba(255,255,255,.55);font-weight:600;}
+.notif-app-time{font-size:9px;color:rgba(255,255,255,.35);margin-left:auto;}
+.notif-title{font-size:12px;font-weight:700;color:#fff;margin-bottom:3px;}
+.notif-body{font-size:10px;color:rgba(255,255,255,.65);line-height:1.5;}
+.notif-actions{display:flex;gap:5px;margin-top:8px;}
+.na{flex:1;text-align:center;padding:5px;background:rgba(255,255,255,.07);border-radius:7px;font-size:10px;color:var(--cy);cursor:pointer;}
+.sms-bubble{border-radius:12px 12px 3px 12px;padding:9px 11px;margin-top:9px;font-size:11px;color:#fff;line-height:1.5;}
+.sms-flood{background:#1c4e7c;}
+.sms-fire{background:#7c2a1c;}
+.sms-time{font-size:9px;color:rgba(255,255,255,.45);text-align:right;margin-top:3px;}
+
+/* ALERT LOG */
+.log-wrap{overflow-y:auto;max-height:250px;}
+.log-wrap::-webkit-scrollbar{width:2px;}
+.log-wrap::-webkit-scrollbar-thumb{background:var(--t3);}
+.log-entry{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(0,210,255,.05);animation:logIn .3s;}
+@keyframes logIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.log-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.d-rd{background:var(--rd);}
+.d-am{background:var(--am);}
+.d-gn{background:var(--gn);}
+.d-cy{background:var(--cy);}
+.d-fire{background:var(--fire);}
+.log-time{font-family:var(--fm);font-size:.5rem;color:var(--t3);flex-shrink:0;width:46px;padding-top:1px;}
+.log-msg{font-family:var(--fm);font-size:.56rem;color:var(--t2);line-height:1.5;}
+.log-msg strong{color:var(--t1);font-weight:500;}
+
+/* ML FEATURE BARS */
+.ml-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.ml-feat{font-family:var(--fm);font-size:.53rem;color:var(--t3);width:105px;flex-shrink:0;}
+.ml-track{flex:1;height:4px;background:rgba(0,0,0,.3);border-radius:2px;overflow:hidden;}
+.ml-fill{height:100%;border-radius:2px;transition:width 1.2s ease;}
+.ml-pct{font-family:var(--fm);font-size:.52rem;width:32px;text-align:right;flex-shrink:0;}
+
+/* MINI BUTTON */
+.mini-btn{font-family:var(--fm);font-size:.56rem;padding:4px 10px;border:1px solid var(--bd);
+  border-radius:3px;background:var(--sf2);color:var(--t3);cursor:pointer;transition:all .15s;}
+.mini-btn:hover{border-color:rgba(0,210,255,.25);color:var(--t2);}
+.mini-btn-fire{border-color:rgba(255,85,0,.2);color:var(--fire);}
+.mini-btn-fire:hover{border-color:rgba(255,85,0,.4);background:rgba(255,85,0,.05);}
+
+/* TICKER */
+.ticker-bar{padding:0 20px;border-bottom:1px solid rgba(255,85,0,.15);
+  background:rgba(255,85,0,.04);display:flex;align-items:center;height:28px;overflow:hidden;}
+.ticker-label{font-family:var(--fm);font-size:.55rem;color:var(--fire);letter-spacing:1px;
+  white-space:nowrap;padding-right:18px;border-right:1px solid rgba(255,85,0,.2);margin-right:14px;flex-shrink:0;}
+.ticker-text{font-family:var(--fm);font-size:.6rem;color:var(--am);white-space:nowrap;animation:tick 40s linear infinite;}
+@keyframes tick{0%{transform:translateX(100vw)}100%{transform:translateX(-300%)}}
+
+/* FLASH TOAST */
+.flash-wrap{position:fixed;top:70px;right:20px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .3s;}
+.flash-wrap.show{opacity:1;pointer-events:all;}
+.flash-toast{background:rgba(7,21,37,.97);border:1px solid;border-left:4px solid;border-radius:6px;
+  padding:12px 16px;min-width:300px;max-width:380px;transform:translateX(20px);transition:transform .3s;}
+.flash-wrap.show .flash-toast{transform:none;}
+.ft-flood{border-color:var(--rd);border-left-color:var(--rd);}
+.ft-fire{border-color:var(--fire);border-left-color:var(--fire);}
+.ft-hdr{font-family:var(--fm);font-size:.57rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+.ft-hdr::before{content:'';width:6px;height:6px;border-radius:50%;animation:blink .4s infinite;}
+.ft-flood .ft-hdr{color:var(--rd);}
+.ft-flood .ft-hdr::before{background:var(--rd);}
+.ft-fire .ft-hdr{color:var(--fire);}
+.ft-fire .ft-hdr::before{background:var(--fire);}
+.ft-title{font-family:var(--fu);font-weight:700;font-size:.95rem;margin-bottom:3px;}
+.ft-body{font-family:var(--fm);font-size:.57rem;color:var(--t2);line-height:1.6;}
+.ft-close{float:right;background:none;border:none;color:var(--t3);cursor:pointer;margin-left:8px;}
+
+/* CONFIDENCE RING */
+.conf-ring{width:88px;height:88px;position:relative;margin:0 auto 12px;}
+.conf-ring svg{transform:rotate(-90deg);}
+.conf-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.conf-pct{font-family:var(--fu);font-weight:700;font-size:1.35rem;line-height:1;}
+.conf-sub{font-family:var(--fm);font-size:.44rem;color:var(--t3);text-transform:uppercase;margin-top:2px;}
+
+/* FWI COLOR SCALE */
+.fwi-scale{display:flex;border-radius:3px;overflow:hidden;height:6px;margin-bottom:4px;}
+.fwi-scale div{flex:1;}
+
+/* SELECTED ZONE HEADER */
+.zone-sel-header{
+  background:rgba(255,85,0,.06);border:1px solid rgba(255,85,0,.25);border-radius:4px;
+  padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;
+  transition:all .3s;
+}
+.zsh-label{font-family:var(--fm);font-size:.52rem;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;}
+.zsh-name{font-family:var(--fu);font-weight:700;font-size:1rem;color:var(--fire);margin-top:2px;}
+.zsh-meta{font-family:var(--fm);font-size:.54rem;color:var(--t2);}
+.zsh-right{text-align:right;}
+
+/* ZONE CARD SELECTED STATE */
+.zc.zc-selected{box-shadow:0 0 0 2px var(--fire);background:rgba(255,85,0,.06);}
+.zc.zl.zc-selected{box-shadow:0 0 0 2px var(--gn);}
+.zc.zf-mod.zc-selected{box-shadow:0 0 0 2px var(--am);}
+.zc.zf-high.zc-selected{box-shadow:0 0 0 2px var(--or);}
+.zc.zf-ext.zc-selected{box-shadow:0 0 0 2px var(--fire);}
+
+/* FLOOD ZONE SELECTED */
+.zc.fl-selected{box-shadow:0 0 0 2px var(--cy);}
+</style>
+{% endblock %}
+{% block main_class %}{% endblock %}
+{% block content %}
+<!-- DISASTER TYPE SELECTOR TABS -->
+<div class="dtype-bar">
+  <div class="dtype-tab flood-active" id="tab-flood" onclick="switchTab('flood')">
+    <span class="tab-icon">🌊</span>
+    FLOOD Early Warning
+    <span class="tab-badge flood-badge" id="flood-alert-cnt">0 alerts</span>
+  </div>
+  <div class="dtype-sep"></div>
+  <div class="dtype-tab" id="tab-fire" onclick="switchTab('fire')">
+    <span class="tab-icon">🔥</span>
+    FIRE Early Warning
+    <span class="tab-badge fire-badge" id="fire-alert-cnt">0 alerts</span>
+  </div>
+  <div class="tab-status-right">
+    <div class="sys-pill sp-flood">FLOOD SYSTEM ARMED</div>
+    <div class="sys-pill sp-fire">FIRE SYSTEM ARMED</div>
+    <div style="font-family:var(--fm);font-size:.6rem;color:var(--t3)" id="clk2">--:--:--</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  FLOOD PANEL                                               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="panel-flood" id="panel-flood">
+
+  <!-- Flood Pipeline -->
+  <div class="pipeline">
+    <div class="pl-node done" id="fpl1"><div class="pl-num">1</div>Sensor Ingestion</div><div class="pl-arr">→</div>
+    <div class="pl-node done" id="fpl2"><div class="pl-num">2</div>Threshold Check</div><div class="pl-arr">→</div>
+    <div class="pl-node done" id="fpl3"><div class="pl-num">3</div>XGBoost Classify</div><div class="pl-arr">→</div>
+    <div class="pl-node idle" id="fpl4"><div class="pl-num">4</div>Alert Generated</div><div class="pl-arr">→</div>
+    <div class="pl-node idle" id="fpl5"><div class="pl-num">5</div>SMS + Push Dispatch</div><div class="pl-arr">→</div>
+    <div class="pl-node idle" id="fpl6"><div class="pl-num">6</div>Citizen Notified</div><div class="pl-arr">→</div>
+    <div class="pl-node idle" id="fpl7"><div class="pl-num">7</div>Authority Escalation</div><div class="pl-arr">→</div>
+    <div class="pl-node idle" id="fpl8"><div class="pl-num">8</div>Response Tracking</div>
+  </div>
+
+  <!-- Flood Stats -->
+  <div class="stats-strip stats-flood">
+    <div class="sc"><div class="sv" style="color:var(--gn)" id="fs1">0</div><div class="sl">Active Flood Alerts</div></div>
+    <div class="sc"><div class="sv" style="color:var(--am)" id="fs2">10</div><div class="sl">Zones Monitored</div></div>
+    <div class="sc"><div class="sv" style="color:var(--cy)" id="fs3">0</div><div class="sl">Citizens Notified</div></div>
+    <div class="sc"><div class="sv" style="color:var(--vi)" id="fs4">0</div><div class="sl">Acknowledged</div></div>
+    <div class="sc"><div class="sv" style="color:var(--rd)" id="fs5">91%</div><div class="sl">ML Confidence</div></div>
+  </div>
+
+  <!-- Flood Body -->
+  <div class="body-grid">
+
+    <!-- Zones col -->
+    <div class="sec" style="grid-row:span 2">
+      <div class="sec-hdr">
+        <div class="sec-title st-cy">🌊 Bengaluru Flood Zone Monitor</div>
+        <button class="mini-btn" onclick="triggerFloodScenario()">⚡ Trigger Scenario</button>
+      </div>
+      <div class="zones-list" id="floodZonesGrid"></div>
+    </div>
+
+    <!-- Channels -->
+    <div class="sec">
+      <div class="sec-hdr"><div class="sec-title st-am">Multi-Channel Dispatch</div></div>
+      <div class="ch-card" id="f-ch-sms">
+        <div class="ch-icon">📱</div>
+        <div class="ch-info"><div class="ch-name">SMS Alerts</div><div class="ch-stat"><span id="f-sms-stat">Standby</span></div><div class="ch-bar"><div class="ch-fill" id="f-sms-fill" style="background:var(--gn)"></div></div></div>
+        <div class="ch-count" style="color:var(--t3)" id="f-sms-cnt">—</div>
+      </div>
+      <div class="ch-card" id="f-ch-push">
+        <div class="ch-icon">🔔</div>
+        <div class="ch-info"><div class="ch-name">Push Notifications</div><div class="ch-stat"><span id="f-push-stat">Standby</span></div><div class="ch-bar"><div class="ch-fill" id="f-push-fill" style="background:var(--cy)"></div></div></div>
+        <div class="ch-count" style="color:var(--t3)" id="f-push-cnt">—</div>
+      </div>
+      <div class="ch-card" id="f-ch-siren">
+        <div class="ch-icon">🚨</div>
+        <div class="ch-info"><div class="ch-name">Public Sirens</div><div class="ch-stat"><span id="f-siren-stat">Standby</span></div><div class="ch-bar"><div class="ch-fill" id="f-siren-fill" style="background:var(--rd)"></div></div></div>
+        <div class="ch-count" style="color:var(--t3)" id="f-siren-cnt">—</div>
+      </div>
+      <div class="ch-card" id="f-ch-auth">
+        <div class="ch-icon">🏛️</div>
+        <div class="ch-info"><div class="ch-name">Authority Escalation</div><div class="ch-stat"><span id="f-auth-stat">Standby</span></div><div class="ch-bar"><div class="ch-fill" id="f-auth-fill" style="background:var(--vi)"></div></div></div>
+        <div class="ch-count" style="color:var(--t3)" id="f-auth-cnt">—</div>
+      </div>
+      <div class="ch-card" id="f-ch-iv">
+        <div class="ch-icon">📞</div>
+        <div class="ch-info"><div class="ch-name">IVR Auto-Call</div><div class="ch-stat"><span id="f-iv-stat">Standby</span></div><div class="ch-bar"><div class="ch-fill" id="f-iv-fill" style="background:var(--am)"></div></div></div>
+        <div class="ch-count" style="color:var(--t3)" id="f-iv-cnt">—</div>
+      </div>
+      <button class="dbtn dbtn-flood" id="fDispatchBtn" onclick="runFloodDispatch()" disabled>
+        🌊 DISPATCH FLOOD ALERTS
+      </button>
+    </div>
+
+    <!-- ML Panel -->
+    <div class="sec">
+      <div class="sec-hdr"><div class="sec-title st-vi">XGBoost Flood Model</div></div>
+      <div class="conf-ring">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r="36" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="6"/>
+          <circle cx="44" cy="44" r="36" fill="none" stroke="var(--rd)" stroke-width="6"
+            stroke-dasharray="226.19" stroke-dashoffset="20.7" stroke-linecap="round" id="fConfRing"/>
+        </svg>
+        <div class="conf-inner">
+          <div class="conf-pct" style="color:var(--rd)" id="fConfPct">91%</div>
+          <div class="conf-sub">Confidence</div>
+        </div>
+      </div>
+      <div class="ml-row"><div class="ml-feat">Rainfall 24h</div><div class="ml-track"><div class="ml-fill" style="background:var(--rd);width:34%"></div></div><div class="ml-pct" style="color:var(--rd)">34%</div></div>
+      <div class="ml-row"><div class="ml-feat">Elevation</div><div class="ml-track"><div class="ml-fill" style="background:var(--am);width:22%"></div></div><div class="ml-pct" style="color:var(--am)">22%</div></div>
+      <div class="ml-row"><div class="ml-feat">River Proximity</div><div class="ml-track"><div class="ml-fill" style="background:var(--or);width:18%"></div></div><div class="ml-pct" style="color:var(--or)">18%</div></div>
+      <div class="ml-row"><div class="ml-feat">Flood History</div><div class="ml-track"><div class="ml-fill" style="background:var(--vi);width:14%"></div></div><div class="ml-pct" style="color:var(--vi)">14%</div></div>
+      <div class="ml-row"><div class="ml-feat">Humidity</div><div class="ml-track"><div class="ml-fill" style="background:var(--cy);width:8%"></div></div><div class="ml-pct" style="color:var(--cy)">8%</div></div>
+      <div class="ml-row"><div class="ml-feat">Soil Saturation</div><div class="ml-track"><div class="ml-fill" style="background:var(--gn);width:4%"></div></div><div class="ml-pct" style="color:var(--gn)">4%</div></div>
+      <div style="background:var(--sf2);border:1px solid var(--bd);border-radius:3px;padding:9px 11px;margin-top:8px;">
+        <div style="font-family:var(--fm);font-size:.5rem;color:var(--t3);margin-bottom:5px;">CURRENT PREDICTION</div>
+        <div style="font-family:var(--fu);font-weight:700;font-size:.95rem;color:var(--gn)" id="fMlPred">LOW RISK — All Clear</div>
+        <div style="font-family:var(--fm);font-size:.5rem;color:var(--t3);margin-top:3px">XGBoost · 10 features · 25yr training data</div>
+      </div>
+    </div>
+
+    <!-- Phone Preview -->
+    <div class="sec">
+      <div class="sec-hdr"><div class="sec-title st-gn">Citizen Alert Preview</div></div>
+      <div id="fPhoneDefault" style="text-align:center;padding:16px 0;font-family:var(--fm);font-size:.56rem;color:var(--t3)">
+        Trigger a scenario above to preview citizen alert
+      </div>
+      <div id="fPhonePreview" style="display:none">
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="notif-card">
+            <div class="notif-app"><div class="notif-app-icon ni-flood">🌊</div><div class="notif-app-name">FloodSense Pro</div><div class="notif-app-time">now</div></div>
+            <div class="notif-title" id="fNotifTitle">🚨 EXTREME Flood Warning</div>
+            <div class="notif-body" id="fNotifBody">Bellandur: 131mm rainfall detected.</div>
+            <div class="notif-actions"><div class="na">View Route</div><div class="na">Acknowledge</div></div>
+          </div>
+          <div class="sms-bubble sms-flood" id="fSmsPreview">SMS loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flood Alert Log -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-title">Flood Alert Log</div>
+        <button class="mini-btn" onclick="clearLog('fLog')">Clear</button>
+      </div>
+      <div class="log-wrap" id="fLog"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  FIRE PANEL                                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="panel-fire" id="panel-fire">
+
+  <!-- Fire ticker -->
+  <div class="ticker-bar">
+    <div class="ticker-label">🔥 FIRE WATCH</div>
+    <div class="ticker-text" id="fireTicker">
+      FWI monitoring active across 6 Bengaluru industrial zones ·· Wind speed 28km/h — below 35km/h alert threshold ·· Fuel moisture 15% — MODERATE ·· Electronic City: MODERATE fire danger ·· Whitefield industrial: LOW ·· Temperature 29°C ·· Relative humidity 21% — watch level
+    </div>
+  </div>
+
+  <!-- Fire Pipeline -->
+  <div class="pipeline">
+    <div class="pl-node fire-done" id="rpl1"><div class="pl-num">1</div>Weather Ingestion</div><div class="pl-arr">→</div>
+    <div class="pl-node fire-done" id="rpl2"><div class="pl-num">2</div>FWI Calculation</div><div class="pl-arr">→</div>
+    <div class="pl-node fire-done" id="rpl3"><div class="pl-num">3</div>Hotspot Detection</div><div class="pl-arr">→</div>
+    <div class="pl-node idle" id="rpl4"><div class="pl-num">4</div>Risk Classification</div><div class="pl-arr">→</div>
+    <div class="pl-node idle" id="rpl5"><div class="pl-num">5</div>Pre-Ignition Alert</div><div class="pl-arr">→</div>
+    <div class="pl-node idle" id="rpl6"><div class="pl-num">6</div>Fire Dept Notified</div><div class="pl-arr">→</div>
+    <div class="pl-node idle" id="rpl7"><div class="pl-num">7</div>Citizen Warning</div><div class="pl-arr">→</div>
+    <div class="pl-node idle" id="rpl8"><div class="pl-num">8</div>Evacuation Triggered</div>
+  </div>
+
+  <!-- Fire Stats -->
+  <div class="stats-strip stats-fire">
+    <div class="sc"><div class="sv" style="color:var(--gn)" id="rs1">0</div><div class="sl">Active Fire Alerts</div></div>
+    <div class="sc"><div class="sv" style="color:var(--am)" id="rs2">6</div><div class="sl">Zones Monitored</div></div>
+    <div class="sc"><div class="sv" style="color:var(--fire)" id="rs3">41</div><div class="sl">Fire Weather Index</div></div>
+    <div class="sc"><div class="sv" style="color:var(--am)" id="rs4">15%</div><div class="sl">Fuel Moisture</div></div>
+    <div class="sc"><div class="sv" style="color:var(--cy)" id="rs5">0</div><div class="sl">Citizens Warned</div></div>
+    <div class="sc"><div class="sv" style="color:var(--rd)" id="rs6">89%</div><div class="sl">ML Confidence</div></div>
+  </div>
+
+  <!-- Fire Body -->
+  <div class="body-grid">
+
+    <!-- Fire Zones col -->
+    <div class="sec" style="grid-row:span 2">
+      <div class="sec-hdr">
+        <div class="sec-title st-fire">🔥 Fire Risk Zone Monitor</div>
+        <button class="mini-btn mini-btn-fire" onclick="triggerFireScenario()">⚡ Trigger Fire Scenario</button>
+      </div>
+
+      <!-- SELECTED ZONE INDICATOR -->
+      <div class="zone-sel-header" id="zoneSelHeader">
+        <div>
+          <div class="zsh-label">Viewing parameters for zone</div>
+          <div class="zsh-name" id="zshName">← Click any zone below to inspect</div>
+          <div class="zsh-meta" id="zshMeta">Select a zone to load its live fire parameters</div>
+        </div>
+        <div class="zsh-right">
+          <div style="font-family:var(--fm);font-size:.5rem;color:var(--t3)">VEGETATION TYPE</div>
+          <div style="font-family:var(--fu);font-weight:700;font-size:.85rem;color:var(--fire)" id="zshVeg">—</div>
+          <div style="font-family:var(--fm);font-size:.5rem;color:var(--t3);margin-top:3px">TERRAIN SLOPE</div>
+          <div style="font-family:var(--fu);font-weight:700;font-size:.85rem;color:var(--am)" id="zshSlope">—</div>
+        </div>
+      </div>
+
+      <!-- Fire Parameter Gauges — KEY SECTION -->
+      <div style="font-family:var(--fm);font-size:.52rem;color:var(--t3);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;">
+        Live Detection Parameters
+      </div>
+      <div class="fire-params-grid" id="fireParamGrid">
+        <!-- JS rendered -->
+      </div>
+
+      <!-- Zone list -->
+      <div style="font-family:var(--fm);font-size:.52rem;color:var(--t3);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;margin-top:6px;">
+        Zone Fire Risk Status
+      </div>
+      <div class="zones-list" id="fireZonesGrid"></div>
+    </div>
+
+    <!-- Fire Channels -->
+    <div class="sec">
+      <div class="sec-hdr"><div class="sec-title st-fire">Fire Alert Dispatch</div></div>
+      <div class="ch-card" id="r-ch-fire">
+        <div class="ch-icon">🚒</div>
+        <div class="ch-info"><div class="ch-name">Fire Department</div><div class="ch-stat"><span id="r-fire-stat">Standby</span></div><div class="ch-bar"><div class="ch-fill" id="r-fire-fill" style="background:var(--fire)"></div></div></div>
+        <div class="ch-count" style="color:var(--t3)" id="r-fire-cnt">—</div>
+      </div>
+      <div class="ch-card" id="r-ch-sms">
+        <div class="ch-icon">📱</div>
+        <div class="ch-info"><div class="ch-name">SMS — Zone Residents</div><div class="ch-stat"><span id="r-sms-stat">Standby</span></div><div class="ch-bar"><div class="ch-fill" id="r-sms-fill" style="background:var(--gn)"></div></div></div>
+        <div class="ch-count" style="color:var(--t3)" id="r-sms-cnt">—</div>
+      </div>
+      <div class="ch-card" id="r-ch-siren">
+        <div class="ch-icon">🔊</div>
+        <div class="ch-info"><div class="ch-name">Industrial Sirens</div><div class="ch-stat"><span id="r-siren-stat">Standby</span></div><div class="ch-bar"><div class="ch-fill" id="r-siren-fill" style="background:var(--or)"></div></div></div>
+        <div class="ch-count" style="color:var(--t3)" id="r-siren-cnt">—</div>
+      </div>
+      <div class="ch-card" id="r-ch-ndrf">
+        <div class="ch-icon">🪖</div>
+        <div class="ch-info"><div class="ch-name">NDRF / SDRF Escalation</div><div class="ch-stat"><span id="r-ndrf-stat">Standby</span></div><div class="ch-bar"><div class="ch-fill" id="r-ndrf-fill" style="background:var(--vi)"></div></div></div>
+        <div class="ch-count" style="color:var(--t3)" id="r-ndrf-cnt">—</div>
+      </div>
+      <div class="ch-card" id="r-ch-road">
+        <div class="ch-icon">🚧</div>
+        <div class="ch-info"><div class="ch-name">Road Closure Alerts</div><div class="ch-stat"><span id="r-road-stat">Standby</span></div><div class="ch-bar"><div class="ch-fill" id="r-road-fill" style="background:var(--am)"></div></div></div>
+        <div class="ch-count" style="color:var(--t3)" id="r-road-cnt">—</div>
+      </div>
+      <button class="dbtn dbtn-fire" id="rDispatchBtn" onclick="runFireDispatch()" disabled>
+        🔥 DISPATCH FIRE ALERTS NOW
+      </button>
+    </div>
+
+    <!-- Fire ML Panel -->
+    <div class="sec">
+      <div class="sec-hdr"><div class="sec-title st-fire">Fire Weather Index Engine</div></div>
+
+      <!-- FWI gauge -->
+      <div class="fwi-ring">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="8"/>
+          <circle cx="55" cy="55" r="46" fill="none" stroke="var(--am)" stroke-width="8"
+            stroke-dasharray="289.03" stroke-dashoffset="231.2" stroke-linecap="round" id="fwiRing"/>
+        </svg>
+        <div class="fwi-inner">
+          <div class="fwi-val" style="color:var(--am)" id="fwiVal">41</div>
+          <div class="fwi-label" id="fwiLabel">MODERATE</div>
+        </div>
+      </div>
+
+      <!-- FWI color scale -->
+      <div style="font-family:var(--fm);font-size:.48rem;color:var(--t3);text-align:center;margin-bottom:4px;">FWI Scale: 0 ─────────────────────────── 100</div>
+      <div class="fwi-scale" style="margin-bottom:10px;">
+        <div style="background:#00e676"></div>
+        <div style="background:#4caf50"></div>
+        <div style="background:#ffb300"></div>
+        <div style="background:#ff6f00"></div>
+        <div style="background:#ff5500"></div>
+        <div style="background:#ff2200"></div>
+      </div>
+
+      <!-- Feature importance for fire -->
+      <div class="ml-row"><div class="ml-feat">Wind Speed</div><div class="ml-track"><div class="ml-fill" id="rf1" style="background:var(--fire);width:31%"></div></div><div class="ml-pct" style="color:var(--fire)">31%</div></div>
+      <div class="ml-row"><div class="ml-feat">Fuel Moisture</div><div class="ml-track"><div class="ml-fill" id="rf2" style="background:var(--rd);width:26%"></div></div><div class="ml-pct" style="color:var(--rd)">26%</div></div>
+      <div class="ml-row"><div class="ml-feat">Relative Humidity</div><div class="ml-track"><div class="ml-fill" id="rf3" style="background:var(--am);width:19%"></div></div><div class="ml-pct" style="color:var(--am)">19%</div></div>
+      <div class="ml-row"><div class="ml-feat">Temperature</div><div class="ml-track"><div class="ml-fill" id="rf4" style="background:var(--or);width:13%"></div></div><div class="ml-pct" style="color:var(--or)">13%</div></div>
+      <div class="ml-row"><div class="ml-feat">Vegetation Index</div><div class="ml-track"><div class="ml-fill" id="rf5" style="background:var(--vi);width:7%"></div></div><div class="ml-pct" style="color:var(--vi)">7%</div></div>
+      <div class="ml-row"><div class="ml-feat">Slope / Terrain</div><div class="ml-track"><div class="ml-fill" id="rf6" style="background:var(--cy);width:4%"></div></div><div class="ml-pct" style="color:var(--cy)">4%</div></div>
+
+      <div style="background:var(--sf2);border:1px solid var(--bd);border-radius:3px;padding:8px 11px;margin-top:8px;">
+        <div style="font-family:var(--fm);font-size:.49rem;color:var(--t3);margin-bottom:4px;">CURRENT FIRE PREDICTION</div>
+        <div style="font-family:var(--fu);font-weight:700;font-size:.92rem;color:var(--am)" id="rMlPred">MODERATE FIRE RISK</div>
+        <div style="font-family:var(--fm);font-size:.49rem;color:var(--t3);margin-top:3px">Random Forest · 8 fire features · Real FWI formula</div>
+      </div>
+    </div>
+
+    <!-- Fire Phone Preview -->
+    <div class="sec">
+      <div class="sec-hdr"><div class="sec-title st-fire">Citizen Fire Alert Preview</div></div>
+      <div id="rPhoneDefault" style="text-align:center;padding:16px 0;font-family:var(--fm);font-size:.56rem;color:var(--t3)">
+        Trigger a fire scenario to preview citizen alert
+      </div>
+      <div id="rPhonePreview" style="display:none">
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="notif-card">
+            <div class="notif-app"><div class="notif-app-icon ni-fire">🔥</div><div class="notif-app-name">FloodSense Pro</div><div class="notif-app-time">now</div></div>
+            <div class="notif-title" id="rNotifTitle">🔥 HIGH Fire Risk Alert</div>
+            <div class="notif-body" id="rNotifBody">Electronic City industrial zone: FWI 78. Evacuate immediately.</div>
+            <div class="notif-actions"><div class="na" style="color:var(--fire)">Evacuate</div><div class="na">Acknowledge</div></div>
+          </div>
+          <div class="sms-bubble sms-fire" id="rSmsPreview">SMS loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fire Alert Log -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-title st-fire">Fire Alert Log</div>
+        <button class="mini-btn mini-btn-fire" onclick="clearLog('rLog')">Clear</button>
+      </div>
+      <div class="log-wrap" id="rLog"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FLASH TOAST -->
+<div class="flash-wrap" id="flashWrap">
+  <div class="flash-toast" id="flashToast">
+    <button class="ft-close" onclick="document.getElementById('flashWrap').classList.remove('show')">✕</button>
+    <div class="ft-hdr" id="ftHdr">ALERT DISPATCHED</div>
+    <div class="ft-title" id="ftTitle">—</div>
+    <div class="ft-body" id="ftBody">—</div>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────
+
+const FLOOD_ZONES = [
+  {name:'Bellandur',     pop:45000, risk:'LOW', rain:72,  lake:79, soil:62},
+  {name:'Marathahalli', pop:32000, risk:'LOW', rain:58,  lake:71, soil:55},
+  {name:'HSR Layout',   pop:28000, risk:'LOW', rain:65,  lake:0,  soil:88},
+  {name:'Whitefield',   pop:55000, risk:'LOW', rain:38,  lake:0,  soil:40},
+  {name:'Koramangala',  pop:38000, risk:'LOW', rain:55,  lake:0,  soil:48},
+  {name:'BTM Layout',   pop:42000, risk:'LOW', rain:60,  lake:0,  soil:70},
+  {name:'Indiranagar',  pop:25000, risk:'LOW', rain:30,  lake:0,  soil:28},
+  {name:'Hebbal',       pop:30000, risk:'LOW', rain:45,  lake:68, soil:42},
+  {name:'Yelahanka',    pop:22000, risk:'LOW', rain:22,  lake:0,  soil:25},
+  {name:'Electronic City',pop:48000,risk:'LOW',rain:50,  lake:0,  soil:55},
+];
+
+// Fire zones — each zone has its OWN independent live parameters
+const FIRE_ZONES = [
+  {name:'Electronic City', pop:48000, risk:'MODERATE', wind:28, humidity:21, fuelMoisture:15, temp:29, fwi:41, vis:8,  vegetation:'Industrial',   slope:'5°'},
+  {name:'Whitefield',      pop:55000, risk:'LOW',      wind:22, humidity:28, fuelMoisture:18, temp:27, fwi:29, vis:10, vegetation:'Mixed Urban',   slope:'3°'},
+  {name:'Bannerghatta',    pop:18000, risk:'HIGH',     wind:34, humidity:15, fuelMoisture:9,  temp:33, fwi:71, vis:4,  vegetation:'Forest Edge',  slope:'15°'},
+  {name:'Devanahalli',     pop:12000, risk:'LOW',      wind:18, humidity:35, fuelMoisture:22, temp:25, fwi:22, vis:10, vegetation:'Agricultural', slope:'8°'},
+  {name:'Anekal',          pop:20000, risk:'MODERATE', wind:26, humidity:19, fuelMoisture:13, temp:31, fwi:48, vis:7,  vegetation:'Scrubland',   slope:'12°'},
+  {name:'Hesaraghatta',    pop:9000,  risk:'LOW',      wind:16, humidity:40, fuelMoisture:24, temp:24, fwi:18, vis:10, vegetation:'Grassland',   slope:'6°'},
+];
+
+// Parameter definitions — thresholds stay constant, vals come from selected zone
+const FIRE_PARAM_DEFS = [
+  {key:'wind',  label:'Wind Speed',        unit:'km/h', warnAt:35, critAt:55, max:80,  color:'var(--fire)', icon:'💨', invert:false, desc:'High wind drives fire spread. >35 = WARN, >55 = CRITICAL'},
+  {key:'humidity',label:'Relative Humidity',unit:'%',   warnAt:25, critAt:15, max:100, color:'var(--cy)',   icon:'💧', invert:true,  desc:'Low RH dries fuel fast. <25% = WARN, <15% = CRITICAL'},
+  {key:'fuelMoisture',label:'Fuel Moisture',unit:'%',   warnAt:12, critAt:8,  max:40,  color:'var(--am)',   icon:'🌿', invert:true,  desc:'Dry fuel ignites easily. <12% = WARN, <8% = flash fire risk'},
+  {key:'temp',  label:'Temperature',       unit:'°C',   warnAt:35, critAt:42, max:50,  color:'var(--or)',   icon:'🌡️', invert:false, desc:'High temp accelerates fuel drying. >35°C = WARN, >42°C = CRITICAL'},
+  {key:'fwi',   label:'Fire Weather Index', unit:'FWI', warnAt:50, critAt:75, max:100, color:'var(--fire)', icon:'🔥', invert:false, desc:'Composite 0–100 score. >50 = HIGH, >75 = EXTREME fire danger'},
+  {key:'vis',   label:'Visibility (Smoke)', unit:'km',  warnAt:5,  critAt:2,  max:10,  color:'var(--vi)',   icon:'🌫️', invert:true,  desc:'Low visibility = smoke present. <5km = WARN, <2km = fire confirmed'},
+];
+
+let selectedFireZoneIdx = -1;
+let selectedFloodZoneIdx = -1;
+
+const FLOOD_SCENARIOS = [
+  {name:'Extreme Monsoon — Bellandur',
+    changes:[{i:0,risk:'EXTREME',rain:131,lake:94,soil:98},{i:1,risk:'HIGH',rain:104,lake:88,soil:82},{i:2,risk:'HIGH',rain:110,soil:91}],
+    notifTitle:'🚨 EXTREME Flood Warning — Bellandur',
+    notifBody:'Rainfall 131mm detected. Bellandur lake 94%. EVACUATE immediately to Lalbagh Botanical Garden.',
+    sms:'FLOODSENSE ALERT: EXTREME flood — Bellandur. 131mm rain. Lake 94%. EVACUATE to Lalbagh (4.2km). Helpline: 1070.',
+    conf:94, pred:'EXTREME FLOOD RISK', predColor:'var(--rd)'},
+  {name:'Lake Overflow — Hebbal',
+    changes:[{i:7,risk:'EXTREME',rain:88,lake:97,soil:85},{i:0,risk:'HIGH',rain:82,lake:89,soil:80}],
+    notifTitle:'🌊 Lake Overflow Imminent — Hebbal',
+    notifBody:'Hebbal lake 97% — overflow in <30 minutes. Downstream areas: EVACUATE NOW.',
+    sms:'FLOODSENSE ALERT: Hebbal lake overflow imminent (97%). HIGH risk Bellandur/Koramangala. Move to BBMP Camp 1. Helpline: 1070.',
+    conf:89, pred:'HIGH FLOOD RISK', predColor:'var(--or)'},
+];
+
+const FIRE_SCENARIOS = [
+  {name:'Industrial Fire Risk — Electronic City',
+    paramChanges:{wind:54, humidity:11, fuelMoisture:7, temp:38, fwi:82, vis:3},
+    zoneChanges:[{i:0,risk:'EXTREME'},{i:4,risk:'HIGH'}],
+    fwiNew:82, fwiLabel:'EXTREME',
+    notifTitle:'🔥 EXTREME Fire Risk — Electronic City',
+    notifBody:'FWI 82 detected. Wind 54km/h, humidity 11%, fuel moisture 7%. Pre-ignition conditions. EVACUATE industrial zone.',
+    sms:'FLOODSENSE FIRE ALERT: EXTREME fire risk in Electronic City. Wind 54km/h, FWI 82. Evacuate immediately. Fire Dept dispatched. Helpline: 101.',
+    conf:92, pred:'EXTREME FIRE RISK', predColor:'var(--fire2)'},
+  {name:'Forest Fire Threat — Bannerghatta',
+    paramChanges:{wind:42, humidity:12, fuelMoisture:8, temp:36, fwi:74, vis:4},
+    zoneChanges:[{i:2,risk:'EXTREME'},{i:4,risk:'HIGH'}],
+    fwiNew:74, fwiLabel:'HIGH',
+    notifTitle:'🔥 HIGH Forest Fire Risk — Bannerghatta',
+    notifBody:'FWI 74 at forest edge. Wind 42km/h from NE. Dry fuel, slope 15°. Fire spread rate EXTREME if ignited.',
+    sms:'FLOODSENSE FIRE ALERT: HIGH fire risk Bannerghatta forest edge. FWI 74. Wind 42km/h. Avoid area. Pre-emptive evacuation zones active. Helpline: 101.',
+    conf:88, pred:'HIGH FIRE RISK', predColor:'var(--or)'},
+];
+
+let floodScIdx=0, fireScIdx=0;
+let fDispatched=false, rDispatched=false;
+let currentTab='flood';
+
+function floodEvacTime(risk){
+  return {EXTREME:'30 min',HIGH:'2 hrs',MEDIUM:'4 hrs'}[risk]||'6 hrs';
+}
+function floodSmsText(zoneName, risk, drill=true){
+  const prefix=drill?'DRILL ':'';
+  return `${prefix}KAVACH: ${zoneName} - flood in ${floodEvacTime(risk)}. GET READY TO EVACUATE. Risk ${risk}. Helpline 1070.`;
+}
+
+// ── CLOCK ─────────────────────────────────────────────────────────────
+function tick(){
+  const t=new Date().toLocaleTimeString('en-IN',{hour12:false});
+  const clk=document.getElementById('clk'); if(clk) clk.textContent=t;
+  const clk2=document.getElementById('clk2'); if(clk2) clk2.textContent=t;
+}
+tick(); setInterval(tick,1000);
+
+// ── TAB SWITCH ────────────────────────────────────────────────────────
+function switchTab(tab){
+  currentTab=tab;
+  document.getElementById('panel-flood').style.display=tab==='flood'?'block':'none';
+  document.getElementById('panel-fire').style.display=tab==='fire'?'block':'none';
+  document.getElementById('tab-flood').className='dtype-tab'+(tab==='flood'?' flood-active':'');
+  document.getElementById('tab-fire').className='dtype-tab'+(tab==='fire'?' fire-active':'');
+}
+
+// ── RENDER FLOOD ZONES ────────────────────────────────────────────────
+const FR_CLASS={LOW:'zl',MEDIUM:'zm',HIGH:'zh',EXTREME:'ze'};
+const FR_BADGE={LOW:'rb-low',MEDIUM:'rb-med',HIGH:'rb-high',EXTREME:'rb-ext'};
+function renderFloodZones(){
+  document.getElementById('floodZonesGrid').innerHTML=FLOOD_ZONES.map((z,i)=>`
+    <div class="zc ${FR_CLASS[z.risk]}" data-idx="${i}">
+      <div>
+        <div class="zc-name">${z.name}</div>
+        <div class="zc-meta">Pop: <b>${z.pop.toLocaleString()}</b> · Rain: <b>${Math.round(z.rain)}mm</b>${z.lake?` · Lake: <b>${z.lake}%</b>`:''} · Soil: <b>${z.soil}%</b></div>
+      </div>
+      <span class="rb ${FR_BADGE[z.risk]}">${z.risk}</span>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+        <button type="button" class="abtn btn-flood-alert ${z.risk==='LOW'?'sent':''}" data-idx="${i}">${z.risk==='LOW'?'✓ Clear':'🔔 Alert'}</button>
+        ${(['HIGH','EXTREME'].includes(z.risk))?`<button type="button" class="btn-sms-alert" data-idx="${i}"
+          style="background:var(--rd);color:#fff;border:none;border-radius:3px;
+                 padding:4px 10px;font-family:var(--fm);font-size:.58rem;
+                 cursor:pointer;white-space:nowrap;">
+          📱 Send SMS Alert
+        </button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+// ── RENDER FIRE PARAMS (for a specific zone) ──────────────────────────
+function renderFireParams(zone){
+  const grid=document.getElementById('fireParamGrid');
+  if(!zone){
+    // No zone selected — show placeholder gauges with dashes
+    grid.innerHTML=FIRE_PARAM_DEFS.map(p=>`
+      <div class="fparam">
+        <div class="fp-label">${p.icon} ${p.label}</div>
+        <div class="fp-val" style="color:var(--t3)">—<span class="fp-unit"> ${p.unit}</span></div>
+        <div class="fp-thr" style="color:var(--t3)">Click a zone to load</div>
+        <div class="fp-bar"><div class="fp-fill" style="width:0%;background:var(--t3)"></div></div>
+      </div>`).join('');
+    return;
+  }
+  grid.innerHTML=FIRE_PARAM_DEFS.map(p=>{
+    const val=zone[p.key];
+    const pct=Math.min(100,(val/p.max)*100);
+    let cls='fparam', state='safe';
+    if(p.invert){
+      if(val<=p.critAt){cls='fparam fp-critical';state='critical';}
+      else if(val<=p.warnAt){cls='fparam fp-warn';state='warn';}
+    } else {
+      if(val>=p.critAt){cls='fparam fp-critical';state='critical';}
+      else if(val>=p.warnAt){cls='fparam fp-warn fp-danger';state='warn';}
+    }
+    const fillColor=state==='critical'?'var(--rd)':state==='warn'?'var(--am)':'var(--gn)';
+    const stateLabel=state==='critical'?'⚠ CRITICAL':state==='warn'?'⚠ WARNING':'✓ NORMAL';
+    return `<div class="${cls}" title="${p.desc}">
+      <div class="fp-label">${p.icon} ${p.label}</div>
+      <div class="fp-val" style="color:${p.color}">${val}<span class="fp-unit"> ${p.unit}</span></div>
+      <div class="fp-thr">${stateLabel} · threshold ${p.invert?'<':'>'} ${p.warnAt}${p.unit}</div>
+      <div class="fp-bar"><div class="fp-fill" style="width:${pct}%;background:${fillColor}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ── SELECT A FIRE ZONE — updates all gauges + FWI ring + header ───────
+function selectFireZone(i){
+  selectedFireZoneIdx=i;
+  const z=FIRE_ZONES[i];
+
+  // Highlight selected zone card, deselect others
+  document.querySelectorAll('#fireZonesGrid .zc').forEach((el,idx)=>{
+    el.classList.toggle('zc-selected', idx===i);
+  });
+
+  // Update zone selector header
+  const riskColors={LOW:'var(--gn)',MODERATE:'var(--am)',HIGH:'var(--or)',EXTREME:'var(--fire)'};
+  document.getElementById('zshName').textContent=z.name;
+  document.getElementById('zshName').style.color=riskColors[z.risk]||'var(--fire)';
+  document.getElementById('zshMeta').textContent=`Pop: ${z.pop.toLocaleString()} · Risk: ${z.risk} · FWI: ${z.fwi}/100`;
+  document.getElementById('zshVeg').textContent=z.vegetation;
+  document.getElementById('zshSlope').textContent=z.slope;
+
+  // Render param gauges for THIS zone
+  renderFireParams(z);
+
+  // Update FWI ring
+  const fwiColor=z.fwi>74?'var(--fire)':z.fwi>49?'var(--or)':z.fwi>24?'var(--am)':'var(--gn)';
+  const fwiLabel=z.fwi>74?'EXTREME':z.fwi>49?'HIGH':z.fwi>24?'MODERATE':'LOW';
+  document.getElementById('fwiVal').textContent=z.fwi;
+  document.getElementById('fwiVal').style.color=fwiColor;
+  document.getElementById('fwiLabel').textContent=fwiLabel;
+  document.getElementById('fwiRing').style.strokeDashoffset=289.03*(1-z.fwi/100);
+  document.getElementById('fwiRing').style.stroke=fwiColor;
+  document.getElementById('rs3').textContent=z.fwi;
+  document.getElementById('rs4').textContent=z.fuelMoisture+'%';
+
+  // Update phone preview if risk not low
+  if(z.risk!=='LOW') previewFireZone(i);
+}
+
+// ── RENDER FIRE ZONES ────────────────────────────────────────────────
+const FFR_CLASS={LOW:'zf-low',MODERATE:'zf-mod',HIGH:'zf-high',EXTREME:'zf-ext'};
+const FFR_BADGE={LOW:'rb-low',MODERATE:'rb-fmod',HIGH:'rb-fhigh',EXTREME:'rb-fext'};
+function renderFireZones(){
+  document.getElementById('fireZonesGrid').innerHTML=FIRE_ZONES.map((z,i)=>`
+    <div class="zc ${FFR_CLASS[z.risk]}${selectedFireZoneIdx===i?' zc-selected':''}" onclick="selectFireZone(${i})">
+      <div>
+        <div class="zc-name">${z.name}</div>
+        <div class="zc-meta">Pop: <b>${z.pop.toLocaleString()}</b> · FWI: <b>${z.fwi}</b> · Wind: <b>${z.wind}km/h</b> · Hum: <b>${z.humidity}%</b> · Fuel: <b>${z.fuelMoisture}%</b></div>
+      </div>
+      <span class="rb ${FFR_BADGE[z.risk]}">${z.risk}</span>
+      <button class="abtn fire-btn ${z.risk==='LOW'?'sent':''}" onclick="event.stopPropagation();manualFireAlert(${i})">${z.risk==='LOW'?'✓ Clear':'🔥 Alert'}</button>
+    </div>`).join('');
+}
+
+// ── FLOOD SCENARIO ────────────────────────────────────────────────────
+async function triggerFloodScenario(){
+  const sc=FLOOD_SCENARIOS[floodScIdx%FLOOD_SCENARIOS.length]; floodScIdx++;
+  FLOOD_ZONES.forEach(z=>z.risk='LOW');
+  sc.changes.forEach(c=>{FLOOD_ZONES[c.i].risk=c.risk;if(c.rain)FLOOD_ZONES[c.i].rain=c.rain;if(c.lake)FLOOD_ZONES[c.i].lake=c.lake;if(c.soil)FLOOD_ZONES[c.i].soil=c.soil;});
+  renderFloodZones();
+  fDispatched=false;
+  const atRisk=FLOOD_ZONES.filter(z=>z.risk!=='LOW').length;
+  document.getElementById('fs1').textContent=atRisk;
+  document.getElementById('fs1').style.color=atRisk>0?'var(--rd)':'var(--gn)';
+  document.getElementById('flood-alert-cnt').textContent=atRisk+' alerts';
+  document.getElementById('fConfPct').textContent=sc.conf+'%';
+  document.getElementById('fConfRing').style.strokeDashoffset=226.19*(1-sc.conf/100);
+  document.getElementById('fMlPred').textContent=sc.pred;
+  document.getElementById('fMlPred').style.color=sc.predColor;
+  document.getElementById('fPhoneDefault').style.display='none';
+  document.getElementById('fPhonePreview').style.display='block';
+  document.getElementById('fNotifTitle').textContent=sc.notifTitle;
+  document.getElementById('fNotifBody').textContent=sc.notifBody;
+  const primary=FLOOD_ZONES[sc.changes[0].i];
+  document.getElementById('fSmsPreview').innerHTML=floodSmsText(primary.name, primary.risk)+'<div class="sms-time">Drill preview · Twilio on dispatch</div>';
+  const btn=document.getElementById('fDispatchBtn');
+  btn.disabled=false;btn.className='dbtn dbtn-flood';btn.textContent='🌊 DISPATCH FLOOD ALERTS';
+  await runPipeline(['fpl1','fpl2','fpl3','fpl4','fpl5'],'done','fLog',
+    [`Rainfall sensor data ingested: ${sc.changes[0].rain||'—'}mm detected in ${FLOOD_ZONES[sc.changes[0].i].name}.`,
+     `Threshold breach: ${atRisk} zone(s) crossing HIGH/EXTREME flood threshold.`,
+     `XGBoost classified: ${sc.pred}. Confidence: ${sc.conf}%.`,
+     `Alert generated for ${atRisk} zone(s). Population at risk: ${FLOOD_ZONES.filter(z=>z.risk!=='LOW').reduce((s,z)=>s+z.pop,0).toLocaleString()}.`,
+     `Channels armed. Awaiting dispatch trigger.`],'cy');
+}
+
+// ── FIRE SCENARIO ─────────────────────────────────────────────────────
+async function triggerFireScenario(){
+  const sc=FIRE_SCENARIOS[fireScIdx%FIRE_SCENARIOS.length]; fireScIdx++;
+  FIRE_ZONES.forEach(z=>z.risk='LOW');
+  sc.zoneChanges.forEach(c=>FIRE_ZONES[c.i].risk=c.risk);
+  // Zone data is updated directly on FIRE_ZONES above — no separate FIRE_PARAMS array needed
+  FIRE_ZONES[sc.zoneChanges[0].i].wind=sc.paramChanges.wind;
+  FIRE_ZONES[sc.zoneChanges[0].i].humidity=sc.paramChanges.humidity;
+  FIRE_ZONES[sc.zoneChanges[0].i].fuelMoisture=sc.paramChanges.fuelMoisture;
+  FIRE_ZONES[sc.zoneChanges[0].i].temp=sc.paramChanges.temp;
+  FIRE_ZONES[sc.zoneChanges[0].i].fwi=sc.fwiNew;
+  FIRE_ZONES[sc.zoneChanges[0].i].vis=sc.paramChanges.vis;
+  renderFireZones();
+  // Auto-select the primary affected zone so gauges update
+  selectFireZone(sc.zoneChanges[0].i);
+  rDispatched=false;
+  const fwiEl=document.getElementById('fwiVal');
+  fwiEl.textContent=sc.fwiNew;
+  fwiEl.style.color=sc.fwiNew>74?'var(--fire)':sc.fwiNew>49?'var(--or)':'var(--am)';
+  document.getElementById('fwiLabel').textContent=sc.fwiLabel;
+  const fwiOffset=289.03*(1-sc.fwiNew/100);
+  document.getElementById('fwiRing').style.strokeDashoffset=fwiOffset;
+  document.getElementById('fwiRing').style.stroke=sc.fwiNew>74?'var(--fire)':sc.fwiNew>49?'var(--or)':'var(--am)';
+  document.getElementById('rs3').textContent=sc.fwiNew;
+  document.getElementById('rs4').textContent=sc.paramChanges.fuelMoisture+'%';
+  document.getElementById('rs6').textContent=sc.conf+'%';
+  const atRisk=FIRE_ZONES.filter(z=>z.risk!=='LOW').length;
+  document.getElementById('rs1').textContent=atRisk;
+  document.getElementById('rs1').style.color='var(--fire)';
+  document.getElementById('fire-alert-cnt').textContent=atRisk+' alerts';
+  document.getElementById('rMlPred').textContent=sc.pred;
+  document.getElementById('rMlPred').style.color=sc.predColor;
+  document.getElementById('rPhoneDefault').style.display='none';
+  document.getElementById('rPhonePreview').style.display='block';
+  document.getElementById('rNotifTitle').textContent=sc.notifTitle;
+  document.getElementById('rNotifBody').textContent=sc.notifBody;
+  document.getElementById('rSmsPreview').innerHTML=sc.sms+'<div class="sms-time">Just now · Delivered</div>';
+  const btn=document.getElementById('rDispatchBtn');
+  btn.disabled=false;btn.className='dbtn dbtn-fire';btn.textContent='🔥 DISPATCH FIRE ALERTS NOW';
+  const fireTicker=`🔥 FIRE SCENARIO ACTIVE: ${sc.name} · FWI: ${sc.fwiNew} (${sc.fwiLabel}) · Wind: ${sc.paramChanges.wind}km/h · Humidity: ${sc.paramChanges.humidity}% · Fuel moisture: ${sc.paramChanges.fuelMoisture}% · Pre-ignition conditions detected · Multi-channel fire dispatch ready`;
+  document.getElementById('fireTicker').textContent=fireTicker;
+  await runPipeline(['rpl1','rpl2','rpl3','rpl4','rpl5'],'fire-done','rLog',
+    [`Weather data ingested: Temp ${sc.paramChanges.temp}°C, Wind ${sc.paramChanges.wind}km/h, Humidity ${sc.paramChanges.humidity}%.`,
+     `FWI calculated: ${sc.fwiNew}/100 — ${sc.fwiLabel} fire danger. Fuel moisture: ${sc.paramChanges.fuelMoisture}%.`,
+     `Hotspot scan complete. No active ignition detected. Pre-ignition conditions present.`,
+     `Risk classified: ${sc.pred}. Confidence: ${sc.conf}%. All critical thresholds breached.`,
+     `Pre-ignition alert generated. Fire dept and citizens armed for dispatch.`],'fire');
+}
+
+// ── FLOOD DISPATCH ────────────────────────────────────────────────────
+async function runFloodDispatch(){
+  if(fDispatched)return; fDispatched=true;
+  const btn=document.getElementById('fDispatchBtn');
+  btn.disabled=true; btn.textContent='DISPATCHING...';
+  const triggered=FLOOD_ZONES.filter(z=>z.risk!=='LOW');
+  const pop=triggered.reduce((s,z)=>s+z.pop,0);
+
+  let twilioSmsOk=false;
+  if(triggered.length){
+    document.getElementById('f-sms-stat').textContent='Sending via Twilio...';
+    try{
+      const smsRes=await fetch('/api/alerts/sms/drill',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          mode:'drill',
+          zones: triggered.map(z=>({zone:z.name, risk_label:z.risk}))
+        })
+      });
+      const smsData=await smsRes.json();
+      if(smsData.status==='success'){
+        twilioSmsOk=true;
+        pushLog(`Twilio SMS DELIVERED: ${smsData.message_count} message(s) for ${triggered.map(z=>z.name).join(', ')}.`,'gn','fLog');
+      } else {
+        pushLog(`Twilio SMS FAILED: ${smsData.message||JSON.stringify(smsData)}`,'am','fLog');
+      }
+    }catch(err){
+      pushLog(`Twilio SMS error: ${err}`,'am','fLog');
+    }
+  }
+
+  await dispatchChannels(['f-ch-sms','f-ch-push','f-ch-siren','f-ch-auth','f-ch-iv'],
+    ['f-sms','f-push','f-siren','f-auth','f-iv'],
+    [Math.round(pop*.82), Math.round(pop*.91), triggered.length*3, 7, Math.round(pop*.12)],
+    ['var(--gn)','var(--cy)','var(--rd)','var(--vi)','var(--am)'],
+    [twilioSmsOk?'Delivered ✓ (Twilio live)':'SMS failed — check log','Delivered ✓','Sirens ACTIVE','Escalated ✓','Calls Active'],
+    'fLog','cy');
+  const total=Math.round(pop*.91);
+  document.getElementById('fs3').textContent=total.toLocaleString();
+  document.getElementById('fs3').style.color='var(--cy)';
+  document.getElementById('fs4').textContent=Math.round(total*.38).toLocaleString();
+  document.getElementById('fpl6').className='pl-node done';
+  document.getElementById('fpl7').className='pl-node done';
+  document.getElementById('fpl8').className='pl-node done';
+  btn.className='dbtn done-flood'; btn.textContent='✓ FLOOD ALERTS DISPATCHED'; btn.disabled=false;
+  showFlash('flood',`Extreme Flood Warning Dispatched`,`${total.toLocaleString()} citizens notified via 5 channels${twilioSmsOk?' (Twilio SMS live to verified contacts)':''}. Authority escalation complete. Response tracking active.`);
+  pushLog('FLOOD DISPATCH COMPLETE. All 5 channels confirmed. Authority escalated. Response tracking active.'+(twilioSmsOk?' Twilio SMS confirmed.':''),'gn','fLog');
+}
+
+// ── FIRE DISPATCH ─────────────────────────────────────────────────────
+async function runFireDispatch(){
+  if(rDispatched)return; rDispatched=true;
+  const btn=document.getElementById('rDispatchBtn');
+  btn.disabled=true; btn.textContent='DISPATCHING FIRE ALERTS...';
+  const pop=FIRE_ZONES.filter(z=>z.risk!=='LOW').reduce((s,z)=>s+z.pop,0);
+  await dispatchChannels(['r-ch-fire','r-ch-sms','r-ch-siren','r-ch-ndrf','r-ch-road'],
+    ['r-fire','r-sms','r-siren','r-ndrf','r-road'],
+    [12, Math.round(pop*.85), FIRE_ZONES.filter(z=>z.risk!=='LOW').length*4, 5, 8],
+    ['var(--fire)','var(--gn)','var(--or)','var(--vi)','var(--am)'],
+    ['12 units dispatched','Delivered ✓','Sirens ACTIVE','Escalated ✓','8 roads closed'],
+    'rLog','fire');
+  const total=Math.round(pop*.85);
+  document.getElementById('rs5').textContent=total.toLocaleString();
+  document.getElementById('rs5').style.color='var(--fire)';
+  document.getElementById('rpl6').className='pl-node fire-done';
+  document.getElementById('rpl7').className='pl-node fire-done';
+  document.getElementById('rpl8').className='pl-node fire-done';
+  btn.className='dbtn done-fire'; btn.textContent='✓ FIRE ALERTS DISPATCHED'; btn.disabled=false;
+  showFlash('fire','Fire Pre-Ignition Alert Dispatched',`${total.toLocaleString()} citizens warned. 12 fire units dispatched. ${FIRE_ZONES.filter(z=>z.risk!=='LOW').length*4} sirens active. Road closures in effect.`);
+  pushLog('FIRE DISPATCH COMPLETE. Fire dept dispatched. Industrial sirens active. Road closures triggered. Citizens notified.','fire','rLog');
+}
+
+// ── GENERIC DISPATCH HELPER ───────────────────────────────────────────
+async function dispatchChannels(cardIds, prefixes, counts, colors, statTexts, logId, logColor){
+  for(let i=0;i<cardIds.length;i++){
+    await sleep(350);
+    document.getElementById(cardIds[i]).className='ch-card firing';
+    document.getElementById(prefixes[i]+'-stat').textContent='Sending...';
+    await animCount(prefixes[i]+'-cnt',0,counts[i],1200,colors[i]);
+    document.getElementById(prefixes[i]+'-fill').style.width='100%';
+    document.getElementById(prefixes[i]+'-stat').textContent=statTexts[i];
+    document.getElementById(cardIds[i]).className='ch-card '+(logColor==='fire'?'fire-done':'done');
+    pushLog(`${statTexts[i]} — ${counts[i].toLocaleString()} ${i===0&&logColor==='fire'?'fire units':'notifications'} via ${cardIds[i].replace('f-ch-','').replace('r-ch-','')} channel.`,logColor,logId);
+  }
+}
+
+// ── PREVIEW ZONE ──────────────────────────────────────────────────────
+function previewFloodZone(i){
+  selectedFloodZoneIdx=i;
+  document.querySelectorAll('#floodZonesGrid .zc').forEach((el,idx)=>{
+    el.classList.toggle('fl-selected', idx===i);
+  });
+  const z=FLOOD_ZONES[i]; if(z.risk==='LOW')return;
+  const labels={MEDIUM:'⚠️ MEDIUM',HIGH:'🔶 HIGH',EXTREME:'🚨 EXTREME'};
+  document.getElementById('fPhoneDefault').style.display='none';
+  document.getElementById('fPhonePreview').style.display='block';
+  document.getElementById('fNotifTitle').textContent=`${labels[z.risk]||z.risk} Flood Alert — ${z.name}`;
+  document.getElementById('fNotifBody').textContent=`Rainfall: ${Math.round(z.rain)}mm.${z.lake?` Lake: ${z.lake}%.`:''} Soil: ${z.soil}%. ${z.risk==='EXTREME'?'EVACUATE IMMEDIATELY.':'Stay alert.'}`;
+  document.getElementById('fSmsPreview').innerHTML=floodSmsText(z.name, z.risk)+'<div class="sms-time">Just now</div>';
+}
+function previewFireZone(i){
+  const z=FIRE_ZONES[i]; if(z.risk==='LOW')return;
+  document.getElementById('rPhoneDefault').style.display='none';
+  document.getElementById('rPhonePreview').style.display='block';
+  document.getElementById('rNotifTitle').textContent=`🔥 ${z.risk} Fire Risk — ${z.name}`;
+  document.getElementById('rNotifBody').textContent=`FWI: ${z.fwi}. Wind: ${z.wind}km/h. Humidity: ${z.humidity}%. Fuel moisture: ${z.fuelMoisture}%. ${z.risk==='EXTREME'?'EVACUATE IMMEDIATELY.':'Avoid area.'}`;
+  document.getElementById('rSmsPreview').innerHTML=`FLOODSENSE FIRE: ${z.risk} fire risk — ${z.name}. FWI ${z.fwi}. Wind ${z.wind}km/h. Humidity ${z.humidity}%. Fuel ${z.fuelMoisture}%. ${z.risk==='EXTREME'?'EVACUATE NOW.':'Stay clear.'} Helpline: 101.<div class="sms-time">Just now</div>`;
+}
+
+// ── MANUAL ALERTS ─────────────────────────────────────────────────────
+function manualFloodAlert(i){
+  const z=FLOOD_ZONES[i]; if(z.risk==='LOW')return;
+  pushLog(`Manual flood alert — ${z.name}: ${z.risk} risk. ${z.pop.toLocaleString()} residents notified.`,'am','fLog');
+}
+function manualFireAlert(i){
+  const z=FIRE_ZONES[i]; if(z.risk==='LOW')return;
+  pushLog(`Manual fire alert — ${z.name}: FWI ${z.fwi} (${z.risk}). ${z.pop.toLocaleString()} residents warned.`,'fire','rLog');
+}
+
+// ── PIPELINE ANIM ─────────────────────────────────────────────────────
+async function runPipeline(nodeIds, doneClass, logId, msgs, logColor){
+  for(let i=0;i<nodeIds.length;i++){
+    document.getElementById(nodeIds[i]).className='pl-node active';
+    await sleep(550);
+    document.getElementById(nodeIds[i]).className=`pl-node ${doneClass}`;
+    pushLog(msgs[i],logColor,logId);
+  }
+}
+
+// ── LOG ───────────────────────────────────────────────────────────────
+const DOT={cy:'d-cy',am:'d-am',gn:'d-gn',rd:'d-rd',fire:'d-fire'};
+function pushLog(msg,color,logId){
+  const t=new Date().toLocaleTimeString('en-IN',{hour12:false});
+  const log=document.getElementById(logId);
+  const e=document.createElement('div');
+  e.className='log-entry';
+  e.innerHTML=`<div class="log-dot ${DOT[color]||'d-cy'}"></div><div class="log-time">${t}</div><div class="log-msg">${msg}</div>`;
+  log.insertBefore(e,log.firstChild);
+}
+function clearLog(id){document.getElementById(id).innerHTML='';}
+
+// ── FLASH TOAST ───────────────────────────────────────────────────────
+function showFlash(type, title, body){
+  const wrap=document.getElementById('flashWrap');
+  const toast=document.getElementById('flashToast');
+  toast.className='flash-toast ft-'+type;
+  document.getElementById('ftHdr').textContent=type==='fire'?'🔥 FIRE ALERT DISPATCHED':'🌊 FLOOD ALERT DISPATCHED';
+  document.getElementById('ftTitle').textContent=title;
+  document.getElementById('ftBody').textContent=body;
+  wrap.classList.add('show');
+  setTimeout(()=>wrap.classList.remove('show'),7000);
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+async function animCount(id,from,to,dur,color){
+  const el=document.getElementById(id);
+  el.style.color=color;
+  const steps=35, inc=(to-from)/steps, delay=dur/steps;
+  let cur=from;
+  for(let i=0;i<steps;i++){cur+=inc;el.textContent=Math.round(cur).toLocaleString();await sleep(delay);}
+  el.textContent=to.toLocaleString();
+}
+
+async function sendSMSAlert(zone, risk, btnEl) {
+  const label = btnEl ? btnEl.textContent : '';
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.textContent = 'Sending...';
+    btnEl.style.opacity = '0.7';
+  }
+  try {
+    const r = await fetch('/api/alerts/sms', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({zone: zone, risk_label: risk, drill: true})
+    });
+    let d;
+    try { d = await r.json(); } catch (_) {
+      throw new Error('Server returned invalid response (HTTP ' + r.status + ')');
+    }
+    if (d.status === 'success') {
+      pushLog(`Twilio SMS sent for ${zone} (${risk}) — ${d.sent.length} delivered.`, 'gn', 'fLog');
+      if (btnEl) {
+        btnEl.textContent = '✓ SMS Sent';
+        btnEl.style.background = 'var(--gn)';
+        btnEl.style.opacity = '1';
+      }
+      showFlash('flood', 'SMS Delivered', `Twilio alert sent for ${zone} to ${d.sent.length} contact(s).`);
+    } else {
+      pushLog('Twilio SMS failed: ' + (d.message || JSON.stringify(d)), 'am', 'fLog');
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.textContent = label || '📱 Send SMS Alert';
+        btnEl.style.opacity = '1';
+      }
+      showFlash('flood', 'SMS Failed', d.message || 'Could not send SMS. Check server logs.');
+    }
+  } catch (e) {
+    pushLog('Twilio SMS error: ' + e, 'am', 'fLog');
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.textContent = label || '📱 Send SMS Alert';
+      btnEl.style.opacity = '1';
+    }
+    showFlash('flood', 'SMS Error', String(e));
+  }
+}
+
+// ── LIVE DATA LOADER ──────────────────────────────────────────────────
+async function loadLiveAlertData(){
+  try {
+    const res = await fetch('/api/alert-center/all-zones');
+    const data = await res.json();
+
+    // ── Update FLOOD zones from API ──
+    if(data.flood_zones && Array.isArray(data.flood_zones)){
+      data.flood_zones.forEach(apiZ => {
+        const idx = FLOOD_ZONES.findIndex(z => z.name.toLowerCase()===apiZ.name.toLowerCase());
+        if(idx !== -1){
+          // API fields: risk_label, rain_1h, rain_3h, humidity, soil_saturation, wind_kmh, temp
+          FLOOD_ZONES[idx].risk = apiZ.risk_label || 'LOW';
+          // rain_1h * 18 = realistic 24h estimate (conservative scaling)
+          const r1h = apiZ.rain_1h || 0;
+          FLOOD_ZONES[idx].rain = Math.round(r1h * 18);
+          FLOOD_ZONES[idx].soil = Math.round(apiZ.soil_saturation || 45);
+          // Lake level: only for lake-adjacent zones
+          if(['bellandur','marathahalli','hebbal'].includes(apiZ.name.toLowerCase()))
+            FLOOD_ZONES[idx].lake = Math.round(58 + r1h*0.3 + Math.max(0,(apiZ.humidity||55)-55)*0.1);
+        }
+      });
+      renderFloodZones();
+      const atRisk = FLOOD_ZONES.filter(z=>z.risk!=='LOW').length;
+      document.getElementById('fs1').textContent = atRisk;
+      document.getElementById('fs1').style.color = atRisk>0?'var(--rd)':'var(--gn)';
+      document.getElementById('flood-alert-cnt').textContent = atRisk+' alerts';
+      if(atRisk>0) pushLog(`Live update: ${atRisk} flood zone(s) at elevated risk.`,'am','fLog');
+    }
+
+    // ── Update FIRE zones from API ──
+    if(data.fire_zones && Array.isArray(data.fire_zones)){
+      data.fire_zones.forEach(apiZ => {
+        const idx = FIRE_ZONES.findIndex(z => z.name.toLowerCase()===apiZ.name.toLowerCase());
+        if(idx !== -1){
+          // API returns: risk_label, wind_kmh, humidity, fuel_moisture, temp, fwi, visibility
+          FIRE_ZONES[idx].risk         = apiZ.risk_label   || FIRE_ZONES[idx].risk;
+          FIRE_ZONES[idx].wind         = apiZ.wind_kmh     !== undefined ? apiZ.wind_kmh     : FIRE_ZONES[idx].wind;
+          FIRE_ZONES[idx].humidity     = apiZ.humidity     !== undefined ? apiZ.humidity     : FIRE_ZONES[idx].humidity;
+          FIRE_ZONES[idx].fuelMoisture = apiZ.fuel_moisture!== undefined ? apiZ.fuel_moisture: FIRE_ZONES[idx].fuelMoisture;
+          FIRE_ZONES[idx].temp         = apiZ.temp         !== undefined ? apiZ.temp         : FIRE_ZONES[idx].temp;
+          FIRE_ZONES[idx].fwi          = apiZ.fwi          !== undefined ? apiZ.fwi          : FIRE_ZONES[idx].fwi;
+          FIRE_ZONES[idx].vis          = apiZ.visibility   !== undefined ? apiZ.visibility   : FIRE_ZONES[idx].vis;
+        }
+      });
+      renderFireZones();
+
+      // Update FWI panel with most dangerous zone
+      const topFire = [...FIRE_ZONES].sort((a,b)=>b.fwi-a.fwi)[0];
+      if(topFire){
+        const fwiColor=topFire.fwi>74?'var(--fire)':topFire.fwi>49?'var(--or)':topFire.fwi>24?'var(--am)':'var(--gn)';
+        const fwiLabel=topFire.fwi>74?'EXTREME':topFire.fwi>49?'HIGH':topFire.fwi>24?'MODERATE':'LOW';
+        document.getElementById('fwiVal').textContent=topFire.fwi;
+        document.getElementById('fwiVal').style.color=fwiColor;
+        document.getElementById('fwiLabel').textContent=fwiLabel;
+        document.getElementById('fwiRing').style.strokeDashoffset=289.03*(1-topFire.fwi/100);
+        document.getElementById('fwiRing').style.stroke=fwiColor;
+        document.getElementById('rs3').textContent=topFire.fwi;
+        document.getElementById('rs4').textContent=topFire.fuelMoisture+'%';
+        // Update ticker with live data
+        const s=data.season_context||{};
+        document.getElementById('fireTicker').textContent=
+          `🔴 LIVE DATA · ${s.season||'Bengaluru'} · `+
+          FIRE_ZONES.map(z=>`${z.name}: FWI ${z.fwi} (${z.risk}) · Wind ${z.wind}km/h · Hum ${z.humidity}%`).join(' ·· ');
+      }
+      const atFireRisk=FIRE_ZONES.filter(z=>z.risk!=='LOW').length;
+      document.getElementById('rs1').textContent=atFireRisk;
+      document.getElementById('rs1').style.color=atFireRisk>0?'var(--fire)':'var(--gn)';
+      document.getElementById('fire-alert-cnt').textContent=atFireRisk+' alerts';
+    }
+
+    // ── Season context banner ──
+    if(data.season_context){
+      const s=data.season_context;
+      pushLog(`[LIVE] ${s.season} · ${s.description} · API: ${data.api_status}.`,'cy','fLog');
+    }
+
+    return true;
+  } catch(e){
+    console.warn('Alert center live load failed:', e);
+    pushLog('Live API unavailable — showing scenario-ready data. Use ⚡ Trigger Scenario to demo.','am','fLog');
+    return false;
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+document.getElementById('floodZonesGrid').addEventListener('click', function(e) {
+  const smsBtn = e.target.closest('.btn-sms-alert');
+  if (smsBtn) {
+    e.stopPropagation();
+    e.preventDefault();
+    const idx = parseInt(smsBtn.dataset.idx, 10);
+    const z = FLOOD_ZONES[idx];
+    if (z) sendSMSAlert(z.name, z.risk, smsBtn);
+    return;
+  }
+  const alertBtn = e.target.closest('.btn-flood-alert');
+  if (alertBtn) {
+    e.stopPropagation();
+    e.preventDefault();
+    manualFloodAlert(parseInt(alertBtn.dataset.idx, 10));
+    return;
+  }
+  const card = e.target.closest('.zc[data-idx]');
+  if (card) previewFloodZone(parseInt(card.dataset.idx, 10));
+});
+
+renderFloodZones();
+renderFireParams(null);  // No zone selected yet — shows placeholder
+renderFireZones();
+document.getElementById('fDispatchBtn').disabled=true;
+document.getElementById('rDispatchBtn').disabled=true;
+
+// Init logs
+pushLog('Flood Alert Command initialized. 10 zones armed. XGBoost model loaded. Thresholds set.','gn','fLog');
+pushLog('SMS, Push, Siren, Authority, IVR channels standby.','cy','fLog');
+pushLog('Fire Warning System initialized. 6 zones monitoring FWI.','fire','rLog');
+pushLog('Fire parameters: Wind, Humidity, Fuel Moisture, Temp, FWI, Visibility — all live.','fire','rLog');
+pushLog('Random Forest fire model loaded. Thresholds: Wind>35, Humidity<25%, FWI>50, FuelMoisture<12%.','cy','rLog');
+
+// Load live data from OpenWeatherMap
+loadLiveAlertData();
+
+// Refresh every 60 seconds
+setInterval(()=>{ loadLiveAlertData(); }, 60000);
+</script>
+{% endblock %}

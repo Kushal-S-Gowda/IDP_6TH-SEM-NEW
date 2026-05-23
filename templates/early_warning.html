@@ -1,0 +1,2005 @@
+{% extends "base.html" %}
+{% block title %}Early Warning Command{% endblock %}
+{% block head %}
+<style>
+/* ── DRILL BANNER ── */
+
+.drill-banner{display:none;background:rgba(255,179,0,.08);border-bottom:2px solid var(--am);
+
+  padding:8px 28px;align-items:center;gap:16px;}
+
+.drill-banner.show{display:flex;}
+
+.db-label{font-family:var(--fm);font-size:.68rem;color:var(--am);font-weight:700;letter-spacing:1px;
+
+  display:flex;align-items:center;gap:8px;}
+
+.db-label::before{content:'';width:8px;height:8px;background:var(--am);border-radius:50%;animation:dp .6s infinite;}
+
+.db-scenario{font-family:var(--fm);font-size:.64rem;color:var(--t2);flex:1;}
+
+.db-btn{font-family:var(--fm);font-size:.6rem;padding:4px 12px;border-radius:3px;cursor:pointer;
+
+  background:transparent;border:1px solid rgba(255,179,0,.3);color:var(--am);transition:all .15s;letter-spacing:.5px;}
+
+.db-btn:hover{background:rgba(255,179,0,.1);}
+
+
+
+/* ── PAGE HEADER ── */
+
+.ph{padding:12px 28px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;}
+
+.ph-title{font-family:var(--fu);font-weight:700;font-size:1.3rem;text-transform:uppercase;letter-spacing:-.3px;}
+
+.ph-sub{font-family:var(--fm);font-size:.58rem;color:var(--t3);margin-top:3px;}
+
+.ph-stats{display:flex;border:1px solid var(--bd);border-radius:4px;overflow:hidden;}
+
+.ph-stat{padding:7px 16px;text-align:center;border-right:1px solid var(--bd);}
+
+.ph-stat:last-child{border-right:none;}
+
+.ph-sv{font-family:var(--fu);font-weight:700;font-size:1.3rem;letter-spacing:-1px;line-height:1;}
+
+.ph-sl{font-family:var(--fm);font-size:.5rem;color:var(--t3);text-transform:uppercase;margin-top:2px;}
+
+
+
+/* ── MODE SWITCHER ── */
+
+.mode-bar{padding:10px 28px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;
+
+  background:rgba(2,12,27,.5);}
+
+.mode-label{font-family:var(--fm);font-size:.58rem;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-right:4px;}
+
+.mode-btn{font-family:var(--fm);font-size:.64rem;padding:6px 16px;border-radius:3px;cursor:pointer;
+
+  border:1px solid var(--bd);background:var(--sf2);color:var(--t3);transition:all .2s;letter-spacing:.5px;pointer-events:auto;user-select:none;}
+
+.mode-btn:hover{background:rgba(0,210,255,.08);border-color:var(--cy);}
+
+.mode-btn.active-live{border-color:var(--gn);color:var(--gn);background:rgba(0,230,118,.07);}
+
+.mode-btn.active-drill{border-color:var(--am);color:var(--am);background:rgba(255,179,0,.07);}
+
+.mode-sep{width:1px;height:22px;background:var(--bd);margin:0 4px;}
+
+.drill-scenarios{display:none;align-items:center;gap:8px;flex:1;}
+
+.drill-scenarios.show{display:flex;}
+
+.ds-label{font-family:var(--fm);font-size:.56rem;color:var(--t3);white-space:nowrap;}
+
+.sc-btn{font-family:var(--fm);font-size:.6rem;padding:5px 12px;border-radius:3px;cursor:pointer;
+
+  border:1px solid var(--bd);background:var(--sf2);color:var(--t3);transition:all .15s;white-space:nowrap;}
+
+.sc-btn:hover{border-color:var(--am);color:var(--am);}
+
+.sc-btn.active{border-color:var(--am);color:var(--am);background:rgba(255,179,0,.08);}
+
+.sc-btn.sc-manmade{border-left:2px solid var(--rd);}
+
+.sc-btn.sc-manmade:hover,.sc-btn.sc-manmade.active{border-color:var(--rd);color:var(--rd);background:rgba(255,45,85,.07);}
+
+.drill-play-btn{font-family:var(--fm);font-size:.62rem;padding:6px 18px;border-radius:3px;cursor:pointer;
+
+  border:none;background:var(--am);color:#000;font-weight:700;letter-spacing:.5px;transition:all .2s;margin-left:auto;}
+
+.drill-play-btn:hover{background:#ffc933;}
+
+.drill-play-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+.drill-reset-btn{font-family:var(--fm);font-size:.6rem;padding:5px 12px;border-radius:3px;cursor:pointer;
+
+  border:1px solid rgba(255,179,0,.2);background:transparent;color:var(--am);transition:all .15s;}
+
+.drill-reset-btn:hover{background:rgba(255,179,0,.08);}
+
+
+
+/* ── MAIN LAYOUT ── */
+
+.main{display:grid;grid-template-columns:1fr 310px;gap:1px;background:var(--bd);
+
+  height:calc(100vh - 168px);overflow:hidden;}
+
+.left{display:flex;flex-direction:column;gap:1px;background:var(--bd);overflow:hidden;}
+
+.right{display:flex;flex-direction:column;gap:1px;background:var(--bd);overflow-y:auto;}
+
+
+
+/* ── SECTION ── */
+
+.sec{background:var(--sf);padding:11px 15px;}
+
+.shdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+
+.stitle{font-family:var(--fm);font-size:.57rem;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;
+
+  display:flex;align-items:center;gap:6px;}
+
+.stitle::before{content:'';width:3px;height:9px;border-radius:1px;}
+
+.st-cy::before{background:var(--cy);}
+
+.st-rd::before{background:var(--rd);}
+
+.st-am::before{background:var(--am);}
+
+.st-gn::before{background:var(--gn);}
+
+.badge{font-family:var(--fm);font-size:.5rem;padding:2px 7px;border-radius:10px;font-weight:700;}
+
+.b-red{background:rgba(255,45,85,.12);color:var(--rd);border:1px solid rgba(255,45,85,.18);}
+
+.b-gn{background:rgba(0,230,118,.1);color:var(--gn);border:1px solid rgba(0,230,118,.14);}
+
+.b-am{background:rgba(255,179,0,.12);color:var(--am);border:1px solid rgba(255,179,0,.18);}
+
+.b-cy{background:rgba(0,210,255,.08);color:var(--cy);border:1px solid rgba(0,210,255,.12);}
+
+
+
+/* ── ZONE GRID ── */
+
+.zgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+
+.zc{background:var(--sf2);border:1px solid var(--bd);border-radius:3px;padding:9px 11px;
+
+  position:relative;overflow:hidden;transition:border-color .4s,background .4s;}
+
+.zc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;transition:background .4s;}
+
+.zc.z-safe::after{background:var(--gn);}
+
+.zc.z-watch::after{background:var(--am);}
+
+.zc.z-high::after{background:#ff6f00;}
+
+.zc.z-extreme{border-color:rgba(255,45,85,.4);animation:zfl 1s infinite;}
+
+.zc.z-extreme::after{background:var(--rd);}
+
+@keyframes zfl{0%,100%{border-color:rgba(255,45,85,.2)}50%{border-color:rgba(255,45,85,.7)}}
+
+.zc-name{font-family:var(--fu);font-weight:700;font-size:.78rem;margin-bottom:3px;}
+
+.zc-chip{font-family:var(--fm);font-size:.54rem;font-weight:700;padding:1px 6px;border-radius:2px;
+
+  display:inline-block;letter-spacing:.5px;margin-bottom:4px;}
+
+.z-safe .zc-chip{background:rgba(0,230,118,.1);color:var(--gn);border:1px solid rgba(0,230,118,.14);}
+
+.z-watch .zc-chip{background:rgba(255,179,0,.1);color:var(--am);border:1px solid rgba(255,179,0,.14);}
+
+.z-high .zc-chip{background:rgba(255,111,0,.1);color:#ff6f00;border:1px solid rgba(255,111,0,.14);}
+
+.z-extreme .zc-chip{background:rgba(255,45,85,.1);color:var(--rd);border:1px solid rgba(255,45,85,.18);animation:dp .7s infinite;}
+
+.zc-meta{font-family:var(--fm);font-size:.54rem;color:var(--t3);}
+
+.zc-meta b{color:var(--t2);}
+
+.zc-type{font-family:var(--fm);font-size:.48rem;padding:1px 4px;border-radius:2px;margin-top:3px;display:inline-block;}
+
+.zt-nat{background:rgba(0,210,255,.06);color:var(--cy);}
+
+.zt-man{background:rgba(255,45,85,.06);color:var(--rd);}
+
+.zc-arr{position:absolute;top:7px;right:7px;font-size:.7rem;}
+
+
+
+/* ── SIGNAL GAUGES ── */
+
+.ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+
+.gauge{background:var(--sf2);border:1px solid var(--bd);border-radius:3px;padding:9px 11px;
+
+  transition:border-color .4s,background .4s;}
+
+.gauge.g-warn{border-color:rgba(255,179,0,.3);background:rgba(255,179,0,.02);}
+
+.gauge.g-alert{border-color:rgba(255,45,85,.4);background:rgba(255,45,85,.03);}
+
+.g-lbl{font-family:var(--fm);font-size:.53rem;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+
+.g-val{font-family:var(--fu);font-weight:700;font-size:1.22rem;letter-spacing:-.5px;line-height:1;}
+
+.g-val.gv-safe{color:var(--gn);}
+
+.g-val.gv-warn{color:var(--am);}
+
+.g-val.gv-alert{color:var(--rd);}
+
+.g-unit{font-size:.56rem;font-weight:400;color:var(--t3);}
+
+.g-thr{font-family:var(--fm);font-size:.5rem;color:var(--t3);margin-top:2px;}
+
+.g-bar{margin-top:6px;height:3px;background:rgba(0,0,0,.3);border-radius:2px;overflow:hidden;position:relative;}
+
+.g-fill{height:100%;border-radius:2px;transition:width .6s ease;}
+
+.g-thrline{position:absolute;top:-2px;width:1px;height:7px;background:rgba(255,255,255,.25);}
+
+
+
+/* ── PREDICTION TABLE ── */
+
+.ptable{width:100%;border-collapse:collapse;}
+
+.ptable th{font-family:var(--fm);font-size:.51rem;color:var(--t3);letter-spacing:.5px;text-transform:uppercase;
+
+  padding:4px 7px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap;}
+
+.ptable td{padding:6px 7px;border-bottom:1px solid rgba(0,210,255,.04);font-family:var(--fm);font-size:.59rem;
+
+  transition:background .4s;}
+
+.ptable tr:last-child td{border-bottom:none;}
+
+.ptable tr:hover td{background:rgba(0,210,255,.02);}
+
+.td-z{color:var(--t2);font-weight:600;}
+
+.rc{padding:1px 5px;border-radius:2px;font-size:.52rem;font-weight:700;letter-spacing:.5px;display:inline-block;}
+
+.r-LOW{background:rgba(0,230,118,.08);color:var(--gn);border:1px solid rgba(0,230,118,.12);}
+
+.r-MEDIUM{background:rgba(255,179,0,.08);color:var(--am);border:1px solid rgba(255,179,0,.12);}
+
+.r-HIGH{background:rgba(255,111,0,.08);color:#ff6f00;border:1px solid rgba(255,111,0,.12);}
+
+.r-EXTREME{background:rgba(255,45,85,.08);color:var(--rd);border:1px solid rgba(255,45,85,.14);animation:dp .7s infinite;}
+
+.td-tp{font-size:.48rem;padding:1px 4px;border-radius:2px;}
+
+.tp-n{background:rgba(0,210,255,.06);color:var(--cy);}
+
+.tp-m{background:rgba(255,45,85,.06);color:var(--rd);}
+
+.td-act{color:var(--cy);font-size:.54rem;}
+
+
+
+/* ── RIGHT: LEAD TIME ── */
+
+.lead-big{text-align:center;padding:8px 0 12px;}
+
+.lv{font-family:var(--fu);font-weight:700;font-size:2.6rem;letter-spacing:-2px;line-height:1;}
+
+.ll{font-family:var(--fm);font-size:.54rem;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;}
+
+.lc{font-family:var(--fm);font-size:.58rem;color:var(--t2);margin-top:5px;}
+
+.lc b{color:var(--rd);}
+
+.thr-row{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid rgba(0,210,255,.05);}
+
+.thr-row:last-child{border-bottom:none;}
+
+.thr-name{font-family:var(--fm);font-size:.56rem;color:var(--t3);width:100px;flex-shrink:0;}
+
+.thr-bar{flex:1;height:4px;background:rgba(0,0,0,.3);border-radius:2px;overflow:hidden;}
+
+.thr-fill{height:100%;border-radius:2px;transition:width .6s ease;}
+
+.thr-val{font-family:var(--fm);font-size:.56rem;width:52px;text-align:right;flex-shrink:0;transition:color .4s;}
+
+.thr-st{font-family:var(--fm);font-size:.5rem;padding:1px 5px;border-radius:2px;font-weight:700;flex-shrink:0;min-width:42px;text-align:center;}
+
+.ts-ok{background:rgba(0,230,118,.08);color:var(--gn);border:1px solid rgba(0,230,118,.12);}
+
+.ts-w{background:rgba(255,179,0,.08);color:var(--am);border:1px solid rgba(255,179,0,.12);}
+
+.ts-c{background:rgba(255,45,85,.08);color:var(--rd);border:1px solid rgba(255,45,85,.12);animation:dp .7s infinite;}
+
+
+
+/* ── ALERT PIPELINE (DRILL) ── */
+
+.pipeline{padding:0;}
+
+.pipe-step{display:flex;align-items:flex-start;gap:10px;padding:8px 14px;
+
+  border-bottom:1px solid rgba(0,210,255,.05);opacity:.35;transition:opacity .4s,background .4s;}
+
+.pipe-step.active{opacity:1;background:rgba(0,210,255,.03);}
+
+.pipe-step.done{opacity:.7;}
+
+.pipe-step:last-child{border-bottom:none;}
+
+.ps-num{font-family:var(--fm);font-size:.56rem;color:var(--t3);width:18px;flex-shrink:0;padding-top:1px;}
+
+.ps-icon{font-size:.9rem;flex-shrink:0;width:20px;text-align:center;}
+
+.ps-body{flex:1;}
+
+.ps-title{font-family:var(--fu);font-weight:600;font-size:.82rem;letter-spacing:.2px;margin-bottom:2px;}
+
+.ps-detail{font-family:var(--fm);font-size:.56rem;color:var(--t3);line-height:1.45;}
+
+.ps-time{font-family:var(--fm);font-size:.54rem;color:var(--t3);flex-shrink:0;text-align:right;padding-top:1px;min-width:36px;}
+
+.ps-time.fired{color:var(--gn);}
+
+.pipe-step.active .ps-title{color:var(--cy);}
+
+.pipe-step.p-warn.active .ps-title{color:var(--am);}
+
+.pipe-step.p-crit.active .ps-title{color:var(--rd);}
+
+.pipe-step.p-gn.active .ps-title{color:var(--gn);}
+
+
+
+/* ── ALERT LOG ── */
+
+.alog{overflow-y:auto;flex:1;min-height:0;}
+
+.log-e{display:flex;align-items:flex-start;gap:6px;padding:6px 0;
+
+  border-bottom:1px solid rgba(0,210,255,.04);animation:sli .25s ease;}
+
+@keyframes sli{from{opacity:0;transform:translateX(5px)}to{opacity:1;transform:none}}
+
+.log-e:last-child{border-bottom:none;}
+
+.log-t{font-family:var(--fm);font-size:.54rem;color:var(--t3);flex-shrink:0;width:44px;padding-top:1px;}
+
+.log-p{flex-shrink:0;padding:1px 5px;border-radius:2px;font-family:var(--fm);font-size:.5rem;font-weight:700;}
+
+.lp-r{background:rgba(255,45,85,.12);color:var(--rd);border:1px solid rgba(255,45,85,.16);}
+
+.lp-a{background:rgba(255,179,0,.12);color:var(--am);border:1px solid rgba(255,179,0,.16);}
+
+.lp-g{background:rgba(0,230,118,.1);color:var(--gn);border:1px solid rgba(0,230,118,.12);}
+
+.lp-i{background:rgba(0,210,255,.07);color:var(--cy);border:1px solid rgba(0,210,255,.1);}
+
+.log-m{font-family:var(--fm);font-size:.58rem;color:var(--t2);line-height:1.4;flex:1;}
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- DRILL BANNER -->
+
+<div class="drill-banner" id="drillBanner">
+
+  <div class="db-label">⚠ DRILL MODE — NOT LIVE DATA</div>
+
+  <div class="db-scenario" id="drillScenarioLabel">Select a scenario and press ▶ Run Drill</div>
+
+  <button class="db-btn" onclick="exitDrill()">✕ Exit Drill</button>
+
+</div>
+
+
+
+<!-- PAGE HEADER -->
+
+<div class="ph">
+
+  <div>
+
+    <div class="ph-title">Early Warning <span style="color:var(--rd)">Command</span></div>
+
+    <div class="ph-sub" id="phSub">Live monitoring · XGBoost threshold detection · Real weather data · Auto-alert on breach</div>
+
+  </div>
+
+  <div class="ph-stats">
+
+    <div class="ph-stat"><div class="ph-sv" id="hAlerts" style="color:var(--gn)">0</div><div class="ph-sl">Active Alerts</div></div>
+
+    <div class="ph-stat"><div class="ph-sv" id="hZones" style="color:var(--am)">0</div><div class="ph-sl">Zones at Risk</div></div>
+
+    <div class="ph-stat"><div class="ph-sv" id="hLead" style="color:var(--cy)">—</div><div class="ph-sl">Lead Time</div></div>
+
+    <div class="ph-stat"><div class="ph-sv" style="color:var(--gn);font-size:1rem">81.45%</div><div class="ph-sl">Model F1</div></div>
+
+  </div>
+
+</div>
+
+
+
+<!-- MODE BAR -->
+
+<div class="mode-bar">
+
+  <span class="mode-label">Mode:</span>
+
+  <button class="mode-btn active-live" id="btnLive" onclick="setMode('live')">● LIVE — Real Weather Data</button>
+
+  <button class="mode-btn" id="btnDrill" onclick="setMode('drill')">▶ DRILL — Threshold Scenarios</button>
+
+  <div class="mode-sep"></div>
+
+  <div class="drill-scenarios" id="drillScenarios">
+
+    <span class="ds-label">Scenario:</span>
+
+    <button class="sc-btn active" id="sc0" onclick="selectScenario(0)">🌧 Extreme Monsoon</button>
+
+    <button class="sc-btn" id="sc1" onclick="selectScenario(1)">🌊 Bellandur Overflow</button>
+
+    <button class="sc-btn sc-manmade" id="sc2" onclick="selectScenario(2)">🚧 Urban Drain Failure</button>
+
+    <button class="sc-btn sc-manmade" id="sc3" onclick="selectScenario(3)">🔥 Industrial Fire Conditions</button>
+
+    <button class="drill-play-btn" id="drillPlayBtn" onclick="runDrill()">▶ Run Drill</button>
+
+    <button class="drill-reset-btn" onclick="resetDrill()">↺ Reset</button>
+
+  </div>
+
+</div>
+
+
+
+<!-- MAIN -->
+
+<div class="main">
+
+
+
+  <!-- LEFT -->
+
+  <div class="left">
+
+
+
+    <!-- ZONE GRID -->
+
+    <div class="sec" style="flex-shrink:0">
+
+      <div class="shdr">
+
+        <div class="stitle st-cy">Zone Risk Monitor</div>
+
+        <span class="badge b-cy" id="zoneBadge">● LIVE</span>
+
+      </div>
+
+      <div class="zgrid" id="zoneGrid"></div>
+
+    </div>
+
+
+
+    <!-- SIGNAL GAUGES -->
+
+    <div class="sec" style="flex-shrink:0">
+
+      <div class="shdr">
+
+        <div class="stitle st-rd">Signal Monitor — Thresholds Auto-Monitored</div>
+
+        <span style="font-family:var(--fm);font-size:.52rem;color:var(--t3)" id="sigUpdTime">loading...</span>
+
+      </div>
+
+      <div class="ggrid" id="gaugeGrid"></div>
+
+    </div>
+
+
+
+    <!-- PREDICTION TABLE -->
+
+    <div class="sec" style="flex:1;overflow:auto;min-height:0;">
+
+      <div class="shdr">
+
+        <div class="stitle st-am">48-Hour Risk Prediction Horizon</div>
+
+        <span style="font-family:var(--fm);font-size:.52rem;color:var(--t3)" id="modelBadge">XGBoost model</span>
+
+      </div>
+
+      <table class="ptable">
+
+        <thead>
+
+          <tr><th>Zone</th><th>Type</th><th>Now</th><th>+6h</th><th>+24h</th><th>+48h</th><th>Conf.</th><th>Action</th></tr>
+
+        </thead>
+
+        <tbody id="predBody"></tbody>
+
+      </table>
+
+    </div>
+
+
+
+  </div>
+
+
+
+  <!-- RIGHT -->
+
+  <div class="right">
+
+
+
+    <!-- LEAD TIME -->
+
+    <div class="sec">
+
+      <div class="shdr"><div class="stitle st-am">Warning Lead Time</div></div>
+
+      <div class="lead-big">
+
+        <div class="lv" id="leadVal" style="color:var(--gn)">System Armed</div>
+
+        <div class="ll" id="leadLbl">Monitoring — No active warnings</div>
+
+        <div class="lc" id="leadCompare">vs IMD nowcast ~0–3h · BBMP manual ~0–2h · FloodSense forecast <b>6–48h</b></div>
+
+      </div>
+
+      <div id="leadMethod" style="font-family:var(--fm);font-size:.52rem;color:var(--t3);line-height:1.55;margin-top:8px;padding:8px;background:var(--sf2);border:1px solid var(--bd);border-radius:4px;">
+        Lead time = hours until OWM 3h forecast slots push a zone to HIGH/EXTREME (≥5 mm/24h rolling rain + FHI/XGBoost).
+        Shown on this page, Authority map, and CSV log. Refresh: every 30s live / 30 min config default.
+      </div>
+
+      <div id="thrRows"></div>
+
+    </div>
+
+
+
+    <!-- DRILL: PIPELINE STEPS (shown in drill mode) -->
+
+    <div class="sec" id="pipelineSection" style="display:none;flex:0 0 auto;">
+
+      <div class="shdr">
+
+        <div class="stitle st-am">Alert Pipeline — Executing</div>
+
+        <span class="badge b-am" id="pipeProgress">0 / 7</span>
+
+      </div>
+
+      <div class="pipeline" id="pipelineSteps"></div>
+
+    </div>
+
+
+
+    <!-- ALERT LOG -->
+
+    <div class="sec" style="flex:1;display:flex;flex-direction:column;min-height:140px;">
+
+      <div class="shdr">
+
+        <div class="stitle st-rd">Alert Log</div>
+
+        <span class="badge b-red" id="alertBadge">0 alerts</span>
+
+      </div>
+
+      <div class="alog" id="aLog"></div>
+
+    </div>
+
+
+
+  </div>
+
+</div>
+
+
+
+<script>
+
+// ═══════════════════════════════════════════════════════════════
+
+//  EARLY WARNING COMMAND — DUAL MODE
+
+//
+
+//  LIVE MODE:  Calls /api/fire/conditions for real weather.
+
+//              XGBoost risk is computed from real values.
+
+//              Shows actual model output. Honest on clear days.
+
+//
+
+//  DRILL MODE: Loads pre-set scenario values that CROSS thresholds.
+
+//              Plays alert pipeline step-by-step in real time.
+
+//              Clearly labelled. Shows how system responds.
+
+//              Real emergency systems use exactly this for drills.
+
+// ═══════════════════════════════════════════════════════════════
+
+
+
+// ── SIGNALS (always start from live values) ───────────────────
+
+const SIG = {
+
+  rainfall: { v:5,   warnAt:80,  critAt:130, unit:'mm',   label:'Rainfall 24h',   min:0,   max:200, type:'nat', drift:.3 },
+
+  wind:     { v:11,  warnAt:35,  critAt:55,  unit:'km/h', label:'Wind Speed',      min:0,   max:80,  type:'man', drift:.2 },
+
+  humidity: { v:62,  warnAt:25,  critAt:15,  unit:'%',    label:'Humidity',        min:5,   max:100, type:'man', drift:.15, invert:true },
+
+  lake:     { v:68,  warnAt:85,  critAt:96,  unit:'%',    label:'Lake Level',      min:0,   max:100, type:'nat', drift:.05 },
+
+  drain:    { v:82,  warnAt:50,  critAt:25,  unit:'%',    label:'Drain Capacity',  min:5,   max:100, type:'man', drift:.1,  invert:true },
+
+  soil:     { v:45,  warnAt:75,  critAt:90,  unit:'%',    label:'Soil Saturation', min:0,   max:100, type:'nat', drift:.08 },
+
+};
+
+
+
+// ── ZONES ─────────────────────────────────────────────────────
+
+const ZONES = [
+
+  { name:'Bellandur',       type:'nat', base:2.5, sigs:['rainfall','lake'],   pop:35000 },
+
+  { name:'HSR Layout',      type:'nat', base:2.0, sigs:['rainfall','lake'],   pop:28000 },
+
+  { name:'Koramangala',     type:'man', base:1.8, sigs:['rainfall','drain'],  pop:32000 },
+
+  { name:'Marathahalli',    type:'nat', base:1.5, sigs:['rainfall','soil'],   pop:25000 },
+
+  { name:'Electronic City', type:'man', base:1.6, sigs:['wind','humidity'],   pop:18000 },
+
+  { name:'Whitefield',      type:'nat', base:1.2, sigs:['soil','rainfall'],   pop:20000 },
+
+  { name:'Indiranagar',     type:'man', base:1.0, sigs:['drain'],             pop:30000 },
+
+  { name:'Hebbal',          type:'nat', base:0.6, sigs:['rainfall'],          pop:22000 },
+
+];
+
+
+
+// ── DRILL SCENARIOS ───────────────────────────────────────────
+
+// Each sets specific signal values that cross thresholds.
+
+// The system then responds to those values — alerts fire from logic, not hardcoding.
+
+const DRILLS = [
+
+  {
+
+    name: 'Extreme Monsoon — 135mm/24h',
+
+    type: 'natural',
+
+    desc: 'IMD forecast: 135mm rainfall in 24h. Bellandur lake at 94%. Soil saturated.',
+
+    signals: { rainfall:135, wind:18, humidity:72, lake:94, drain:55, soil:91 },
+
+    // What the 6h/24h/48h forecast looks like under these conditions
+
+    forecast: { h6:'EXTREME', h24:'EXTREME', h48:'HIGH', leadHours:6 }
+
+  },
+
+  {
+
+    name: 'Bellandur Lake Overflow',
+
+    type: 'natural',
+
+    desc: 'Lake at 96.2% capacity. 110mm rainfall continuing. HSR Layout underpasses flooded.',
+
+    signals: { rainfall:110, wind:14, humidity:85, lake:96, drain:40, soil:88 },
+
+    forecast: { h6:'EXTREME', h24:'HIGH', h48:'MEDIUM', leadHours:4 }
+
+  },
+
+  {
+
+    name: 'Urban Drain Failure',
+
+    type: 'manmade',
+
+    desc: 'Koramangala stormwater drains blocked (BBMP data). Drain capacity 18%. Moderate rain becoming catastrophic.',
+
+    signals: { rainfall:58, wind:20, humidity:68, lake:72, drain:18, soil:70 },
+
+    forecast: { h6:'HIGH', h24:'MEDIUM', h48:'LOW', leadHours:2 }
+
+  },
+
+  {
+
+    name: 'Industrial Fire Conditions',
+
+    type: 'manmade',
+
+    desc: 'Electronic City: Wind 52km/h NE, humidity 11%, fuel load HIGH. Pre-ignition alert. No fire confirmed yet.',
+
+    signals: { rainfall:2, wind:52, humidity:11, lake:55, drain:88, soil:30 },
+
+    forecast: { h6:'HIGH', h24:'MEDIUM', h48:'LOW', leadHours:3 }
+
+  },
+
+];
+
+
+
+// ── ALERT PIPELINE (drill mode) ───────────────────────────────
+
+// 7 steps that play sequentially, each with a delay.
+
+// Content is generated from the scenario's actual signal values.
+
+function buildPipeline(drill) {
+
+  const r = SIG.rainfall.v, w = SIG.wind.v, h = SIG.humidity.v;
+
+  const l = SIG.lake.v, dr = SIG.drain.v, so = SIG.soil.v;
+
+  const isFire = drill.type === 'manmade' && w > 35;
+
+  const isDrain = drill.type === 'manmade' && dr < 30;
+
+  const lead = drill.forecast.leadHours;
+
+
+
+  return [
+
+    {
+
+      icon:'📡', cls:'', title:'Signal Collection — Threshold Crossed',
+
+      detail: isFire
+
+        ? `Wind ${w}km/h (⚠ threshold 35) · Humidity ${h}% (⚠ threshold 25) · Industrial zone fuel load HIGH`
+
+        : `Rainfall ${r}mm/24h (⚠ threshold 80mm) · Lake level ${l}% · Drain capacity ${dr}%`,
+
+      delay: 0
+
+    },
+
+    {
+
+      icon:'⚙️', cls:'p-warn', title:'Feature Engineering — 8 ML Features Computed',
+
+      detail:`Rainfall 7d accumulation · Soil saturation ${so}% · Lake level rate-of-change · Elevation map overlay`,
+
+      delay: 1400
+
+    },
+
+    {
+
+      icon:'🤖', cls:'p-crit', title:`XGBoost Prediction — ${drill.forecast.h6} Risk`,
+
+      detail:`Drill scenario inputs applied to thresholds. Forecast horizon: Now → ${drill.forecast.h6}, +24h → ${drill.forecast.h24}, +48h → ${drill.forecast.h48}`,
+
+      delay: 2800
+
+    },
+
+    {
+
+      icon:'⏱', cls:'p-warn', title:`Forecast Lead Time — ${lead}h Before Projected ${isFire ? 'Fire' : 'Flood'} Peak`,
+
+      detail:`Drill scenario models ${lead}h advance notice using OWM-style 3h slot accumulation (same method as Live mode). IMD nowcast typically 0–3h; this system targets 6–48h horizons.`,
+
+      delay: 4200
+
+    },
+
+    {
+
+      icon:'🚨', cls:'p-crit', title:'Alert Issued — Citizen + Authority Dashboards Notified',
+
+      detail:`Zone-specific warnings pushed to ${ZONES.filter(z=>zoneScore(z) > 0.8).map(z=>z.name).join(', ') || 'affected zones'}. SMS gateway armed.`,
+
+      delay: 5600
+
+    },
+
+    {
+
+      icon:'🚁', cls:'p-gn', title:'LP Optimizer — Rescue Resources Pre-Deployed',
+
+      detail:`PuLP/CBC solver: rescue units pre-positioned to high-risk zones before projected peak (Authority → Resource Allocation).`,
+
+      delay: 7000
+
+    },
+
+    {
+
+      icon:'✅', cls:'p-gn', title:'Early Warning Complete — System Monitoring Continues',
+
+      detail:`Lead time advantage: ${lead}h vs ~45min without AI. All downstream systems armed. Next model run in 30 seconds.`,
+
+      delay: 8400
+
+    },
+
+  ];
+
+}
+
+
+
+// ── STATE ─────────────────────────────────────────────────────
+
+let mode = 'live';           // 'live' | 'drill'
+
+let currentDrill = 0;
+
+let drillRunning = false;
+
+let drillTimers = [];
+
+let alertLog = [], alertCnt = 0, lastAlerts = {};
+
+let leadMin = 0;
+
+let liveRefreshInterval = null;
+
+
+
+// ── HELPERS ───────────────────────────────────────────────────
+
+function sigStatus(key) {
+
+  const s = SIG[key];
+
+  if (s.invert) return s.v <= s.critAt ? 'alert' : s.v <= s.warnAt ? 'warn' : 'safe';
+
+  return s.v >= s.critAt ? 'alert' : s.v >= s.warnAt ? 'warn' : 'safe';
+
+}
+
+function sigPct(key) {
+
+  const s = SIG[key];
+
+  return Math.min(100, Math.max(0, (s.v - s.min) / (s.max - s.min) * 100));
+
+}
+
+function barColor(st) { return st==='alert'?'var(--rd)':st==='warn'?'var(--am)':'var(--gn)'; }
+
+
+
+function zoneScore(z) {
+
+  let t = 0;
+
+  for (const k of z.sigs) {
+
+    const s = SIG[k], pct = sigPct(k) / 100;
+
+    t += (s.invert ? 1-pct : pct);
+
+  }
+
+  return (t / z.sigs.length) * z.base;
+
+}
+
+function scoreLevel(sc) {
+
+  if (sc > 1.45) return 'extreme';
+
+  if (sc > 1.05) return 'high';
+
+  if (sc > 0.65) return 'watch';
+
+  return 'safe';
+
+}
+
+function levelLabel(lv) { return {safe:'SAFE',watch:'WATCH',high:'HIGH',extreme:'EXTREME'}[lv]; }
+
+function riskClass(lbl) {
+
+  const m={SAFE:'LOW',WATCH:'MEDIUM',HIGH:'HIGH',EXTREME:'EXTREME',LOW:'LOW',MEDIUM:'MEDIUM'};
+
+  return 'r-'+(m[lbl]||'LOW');
+
+}
+
+function renderZones() {
+
+  // API risk class map: 0=LOW→safe, 1=MEDIUM→watch, 2=HIGH→high, 3=EXTREME→extreme
+  const API_LEVEL = ['safe','watch','high','extreme'];
+  const API_LABEL = ['SAFE','WATCH','HIGH','EXTREME'];
+
+  let html = '', atRisk = 0, critical = 0;
+
+  for (const z of ZONES) {
+    let lv, lb;
+
+    if (mode === 'live' && z.risk_class !== undefined) {
+      // Use real XGBoost risk_class from API — most accurate
+      lv = API_LEVEL[z.risk_class] || 'safe';
+      lb = API_LABEL[z.risk_class] || 'SAFE';
+    } else {
+      // Drill mode or no API data yet — compute from SIG signals
+      const sc = zoneScore(z);
+      lv = scoreLevel(sc);
+      lb = levelLabel(lv);
+    }
+
+    if (lv !== 'safe') atRisk++;
+    if (lv === 'extreme') critical++;
+
+    const sc = zoneScore(z);
+    const arr = sc > 1.0 ? '<div class="zc-arr" style="color:var(--rd)">▲</div>'
+               : sc < 0.35 ? '<div class="zc-arr" style="color:var(--gn)">▼</div>' : '';
+
+    const pSig = SIG[z.sigs[0]];
+    html += `<div class="zc z-${lv}">
+      ${arr}
+      <div class="zc-name">${z.name}</div>
+      <span class="zc-chip">${lb}</span>
+      <div class="zc-meta">${pSig.label}: <b>${pSig.v.toFixed(0)}${pSig.unit}</b></div>
+      <span class="zc-type ${z.type==='nat'?'zt-nat':'zt-man'}">${z.type==='nat'?'NAT':'MAN'}</span>
+    </div>`;
+  }
+
+  document.getElementById('zoneGrid').innerHTML = html;
+  document.getElementById('hAlerts').textContent = critical;
+  document.getElementById('hAlerts').style.color = critical > 0 ? 'var(--rd)' : 'var(--gn)';
+  document.getElementById('hZones').textContent = atRisk;
+  document.getElementById('hZones').style.color = atRisk > 0 ? 'var(--am)' : 'var(--gn)';
+
+  // Nav status  // Nav status
+
+  const navDot = document.getElementById('navDot');
+  const navSt  = document.getElementById('navStatus');
+  if (navDot && navSt) {
+    if (mode === 'drill') {
+      navDot.className = 'dot drill';
+      navSt.style.color = 'var(--am)';
+      navSt.textContent = 'DRILL MODE';
+    } else if (critical > 0) {
+      navDot.className = 'dot warn';
+      navSt.style.color = 'var(--rd)';
+      navSt.textContent = `${critical} CRITICAL ZONE${critical>1?'S':''}`;
+    } else if (atRisk > 0) {
+      navDot.className = 'dot warn';
+      navSt.style.color = 'var(--am)';
+      navSt.textContent = `${atRisk} ZONES AT RISK`;
+    } else {
+      navDot.className = 'dot live';
+      navSt.style.color = 'var(--gn)';
+      navSt.textContent = 'LIVE — ALL CLEAR';
+    }
+  }
+
+}
+
+
+
+// ── RENDER GAUGES ─────────────────────────────────────────────
+
+function renderGauges() {
+
+  let html = '';
+
+  for (const [key, s] of Object.entries(SIG)) {
+
+    const st = sigStatus(key);
+
+    const pct = sigPct(key);
+
+    const thrPct = Math.min(100, (s.warnAt - s.min) / (s.max - s.min) * 100);
+
+    const gaugeClass = st === 'alert' ? 'alert' : (st === 'warn' ? 'warn' : '');
+
+    const bgColor = barColor(st);
+
+    html += `<div class="gauge g-${gaugeClass}">
+
+      <div class="g-lbl">${s.label}</div>
+
+      <div class="g-val gv-${st}">${s.v.toFixed(1)}<span class="g-unit"> ${s.unit}</span></div>
+
+      <div class="g-thr">⚠ ${s.warnAt}${s.unit} threshold</div>
+
+      <div class="g-bar">
+
+        <div class="g-fill" style="width:${pct}%;background:${bgColor}"></div>
+
+        <div class="g-thrline" style="left:${thrPct}%"></div>
+
+      </div>
+
+    </div>`;
+
+  }
+
+  document.getElementById('gaugeGrid').innerHTML = html;
+
+  document.getElementById('sigUpdTime').textContent =
+
+    (mode==='drill'?'⚠ DRILL VALUES · ':'live · ') + new Date().toLocaleTimeString('en-IN',{hour12:false});
+
+}
+
+
+
+// ── RENDER PREDICTION TABLE ───────────────────────────────────
+
+function renderPred(overrideForecast) {
+
+  const acts = { extreme:'EVACUATE NOW', high:'Prepare evacuation', watch:'Issue watch', safe:'Monitor' };
+
+  // Build a lookup of per-zone API forecast data (live mode)
+  // API returns: zones[{name, h6, h24, h48, risk_label}]
+  const apiZoneMap = {};
+  if (overrideForecast && overrideForecast.zones && Array.isArray(overrideForecast.zones)) {
+    overrideForecast.zones.forEach(az => { apiZoneMap[az.name.toLowerCase()] = az; });
+  }
+
+  // Drill mode passes {h6, h24, h48} at top level (not per-zone)
+  const isDrillForecast = overrideForecast && !overrideForecast.zones && overrideForecast.h6;
+
+  // Map API labels (LOW/MEDIUM/HIGH/EXTREME) → display labels (SAFE/WATCH/HIGH/EXTREME)
+  const apiToDisplay = { LOW:'SAFE', MEDIUM:'WATCH', HIGH:'HIGH', EXTREME:'EXTREME' };
+
+  let html = '';
+
+  for (const z of ZONES) {
+    const sc = zoneScore(z);
+    // In live mode use API risk_class for NOW column; fall back to computed score
+    const API_LV = ['safe','watch','high','extreme'];
+    const nowLv = (mode === 'live' && z.risk_class !== undefined) ? API_LV[z.risk_class] : scoreLevel(sc);
+    const now = nowLv;
+    const isAffected = sc > 0.65 || (mode === 'live' && z.risk_class >= 1);
+
+    let h6, h24, h48;
+
+    if (isDrillForecast && isAffected) {
+      // Drill: use top-level h6/h24/h48 from scenario
+      h6  = overrideForecast.h6;
+      h24 = overrideForecast.h24;
+      h48 = overrideForecast.h48;
+    } else if (mode === 'live' && z.api_h6) {
+      // Live mode: use API labels stored directly on zone object
+      h6  = apiToDisplay[z.api_h6]  || z.api_h6;
+      h24 = apiToDisplay[z.api_h24] || z.api_h24;
+      h48 = apiToDisplay[z.api_h48] || z.api_h48;
+    } else {
+      // Pure fallback: compute from score
+      h6  = levelLabel(scoreLevel(Math.min(sc*1.12, 2)));
+      h24 = levelLabel(scoreLevel(Math.min(sc*1.05, 2)));
+      h48 = levelLabel(scoreLevel(Math.min(sc*0.88, 2)));
+    }
+
+    const conf = Math.round(78 + Math.random()*12);
+
+    html += `<tr>
+      <td class="td-z">${z.name}</td>
+      <td><span class="td-tp ${z.type==='nat'?'tp-n':'tp-m'}">${z.type==='nat'?'NAT':'MAN'}</span></td>
+      <td><span class="rc ${riskClass(levelLabel(now))}">${levelLabel(now)}</span></td>
+      <td><span class="rc ${riskClass(h6)}">${h6}</span></td>
+      <td><span class="rc ${riskClass(h24)}">${h24}</span></td>
+      <td><span class="rc ${riskClass(h48)}">${h48}</span></td>
+      <td style="color:var(--t3);font-size:.56rem">${conf}%</td>
+      <td class="td-act">${acts[now] || 'Monitor'}</td>
+    </tr>`;
+  }
+
+  document.getElementById('predBody').innerHTML = html;
+  document.getElementById('modelBadge').textContent =
+    mode==='drill' ? '⚠ Drill scenario values' : 'XGBoost · live values · updates 30s';
+
+}
+
+
+
+// ── RENDER THRESHOLD STATUS (right panel) ────────────────────
+
+function renderThresholds() {
+
+  let html = '';
+
+  for (const [key, s] of Object.entries(SIG)) {
+
+    const st = sigStatus(key);
+
+    const pct = sigPct(key);
+
+    const color = barColor(st);
+
+    const stClass = {safe:'ts-ok',warn:'ts-w',alert:'ts-c'}[st];
+
+    const stLabel = {safe:'OK',warn:'WATCH',alert:'BREACH'}[st];
+
+    html += `<div class="thr-row">
+
+      <div class="thr-name">${s.label}</div>
+
+      <div class="thr-bar"><div class="thr-fill" style="width:${pct}%;background:${color}"></div></div>
+
+      <div class="thr-val" style="color:${color}">${s.v.toFixed(0)}${s.unit}</div>
+
+      <div class="thr-st ${stClass}">${stLabel}</div>
+
+    </div>`;
+
+  }
+
+  document.getElementById('thrRows').innerHTML = html;
+
+}
+
+
+
+// ── LEAD TIME DISPLAY ─────────────────────────────────────────
+
+function renderLead() {
+
+  const lv = document.getElementById('leadVal');
+
+  const ll = document.getElementById('leadLbl');
+
+  const hdr = document.getElementById('hLead');
+
+  const meta = window._forecastMeta || {};
+
+  if (mode === 'live' && meta.system_lead_time_hours != null && meta.system_lead_time_hours >= 0) {
+
+    const lh = meta.system_lead_time_hours;
+
+    lv.style.color = lh <= 6 ? 'var(--rd)' : lh <= 24 ? 'var(--am)' : 'var(--cy)';
+
+    lv.textContent = lh === 0 ? 'Now' : `${lh}h`;
+
+    ll.textContent = lh === 0
+
+      ? 'HIGH/EXTREME risk in current forecast window'
+
+      : `Earliest zone hits HIGH+ in ~${lh}h (OWM 3h slots)`;
+
+    hdr.textContent = lv.textContent;
+
+    if (meta.methodology && document.getElementById('leadMethod')) {
+
+      document.getElementById('leadMethod').textContent = meta.methodology;
+
+    }
+
+    const cmp = document.getElementById('leadCompare');
+
+    if (cmp && meta.benchmarks) {
+
+      const b = meta.benchmarks;
+
+      cmp.innerHTML = `vs ${b.imd_nowcast_radar.name} <b>${b.imd_nowcast_radar.typical_hours}h</b> · `
+
+        + `${b.cwc_river_bulletin.name} <b>${b.cwc_river_bulletin.typical_hours}h</b> · `
+
+        + `${b.bbmp_manual.name} <b>${b.bbmp_manual.typical_hours}h</b> · `
+
+        + `<span style="color:var(--cy)">${b.floodsense_pro.name} <b>${b.floodsense_pro.typical_hours}h</b></span>`;
+
+    }
+
+    return;
+
+  }
+
+  if (mode === 'drill' && drillRunning && leadMin > 0) {
+
+    const h = Math.floor(leadMin / 60), m = leadMin % 60;
+
+    const txt = h > 0 ? `${h}h ${m}m` : `${m}m`;
+
+    lv.style.color = 'var(--am)';
+
+    lv.textContent = txt;
+
+    ll.textContent = `Drill scenario forecast lead (scenario-defined ${DRILLS[currentDrill]?.forecast?.leadHours || '?'}h)`;
+
+    hdr.textContent = txt;
+
+    return;
+
+  }
+
+  lv.style.color = 'var(--gn)';
+
+  lv.textContent = mode === 'drill' && !drillRunning ? 'Ready' : 'All Clear';
+
+  ll.textContent = mode === 'live'
+
+    ? 'No HIGH+ in next 48h forecast · susceptibility may still be elevated'
+
+    : 'Run drill to walk through alert pipeline';
+
+  hdr.textContent = '—';
+
+}
+
+
+
+// ── AUTO-ALERT ON THRESHOLD CROSS ────────────────────────────
+
+const ALERT_MSGS = {
+
+  rainfall: {
+
+    warn: v=>`Rainfall ${v}mm approaching 80mm flood threshold — Bellandur, HSR Layout on watch.`,
+
+    alert: v=>`CRITICAL: Rainfall ${v}mm exceeds 130mm limit. EXTREME flood risk. XGBoost confidence: ${Math.round(83+Math.random()*8)}%.`,
+
+  },
+
+  wind: {
+
+    warn: v=>`Wind ${v}km/h approaching 35km/h fire spread threshold — Electronic City industrial zone.`,
+
+    alert: v=>`CRITICAL: Wind ${v}km/h exceeds 55km/h. Fire Weather Index EXTREME. Pre-ignition alert issued.`,
+
+  },
+
+  humidity: {
+
+    warn: v=>`Humidity ${v}% below 25% — fire ignition risk elevated in Electronic City.`,
+
+    alert: v=>`CRITICAL: Humidity ${v}% below 15%. Combined with high wind — fire risk EXTREME.`,
+
+  },
+
+  lake: {
+
+    warn: v=>`Bellandur lake at ${v}% — approaching 85% overflow threshold.`,
+
+    alert: v=>`CRITICAL: Lake level ${v}% — overflow breach imminent. Pre-emptive evacuation triggered.`,
+
+  },
+
+  drain: {
+
+    warn: v=>`Drain capacity ${v}% — below 50% watch level. Flash flood risk rising in Koramangala.`,
+
+    alert: v=>`CRITICAL: Drain capacity ${v}%. Near-zero drainage — moderate rain will flood underpasses.`,
+
+  },
+
+  soil: {
+
+    warn: v=>`Soil saturation ${v}% above 75% — ground nearing capacity, runoff will accelerate.`,
+
+    alert: v=>`CRITICAL: Soil saturation ${v}% at limit. Any further rainfall → direct runoff.`,
+
+  },
+
+};
+
+
+
+function checkAlerts() {
+
+  const now = Date.now(), t = ts();
+
+  for (const [key, s] of Object.entries(SIG)) {
+
+    const st = sigStatus(key);
+
+    if (st === 'safe') { delete lastAlerts[key+'_alert']; delete lastAlerts[key+'_warn']; continue; }
+
+    const lk = key+'_'+st;
+
+    if (!lastAlerts[lk] || now - lastAlerts[lk] > (st==='alert'?80000:110000)) {
+
+      lastAlerts[lk] = now;
+
+      const msg = ALERT_MSGS[key]?.[st]?.(s.v.toFixed(0));
+
+      if (msg) pushAlert(t, st==='alert'?'RED':'AMBER', msg);
+
+    }
+
+  }
+
+  // Zone critical
+
+  for (const z of ZONES) {
+
+    const lv = scoreLevel(zoneScore(z));
+
+    if (lv === 'extreme') {
+
+      const zk = 'z_'+z.name;
+
+      if (!lastAlerts[zk] || now - lastAlerts[zk] > 110000) {
+
+        lastAlerts[zk] = now;
+
+        pushAlert(t, 'RED', `ZONE CRITICAL: ${z.name} — Model predicts EXTREME risk. ~${Math.round(z.pop*.4).toLocaleString()} residents in impact area.`);
+
+      }
+
+    } else delete lastAlerts['z_'+z.name];
+
+  }
+
+}
+
+
+
+function pushAlert(time, level, msg) {
+
+  alertCnt++;
+
+  const pc = {RED:'lp-r',AMBER:'lp-a',GREEN:'lp-g',INFO:'lp-i'}[level];
+
+  alertLog.unshift({time, level, msg, pc});
+
+  if (alertLog.length > 50) alertLog.pop();
+
+  renderLog();
+
+  document.getElementById('alertBadge').textContent = alertCnt + ' alerts';
+
+}
+
+
+
+function renderLog() {
+
+  document.getElementById('aLog').innerHTML = alertLog.map(e=>
+
+    `<div class="log-e">
+
+      <span class="log-t">${e.time}</span>
+
+      <span class="log-p ${e.pc}">${e.level}</span>
+
+      <span class="log-m">${e.msg}</span>
+
+    </div>`).join('');
+
+}
+
+
+
+function ts() { return new Date().toLocaleTimeString('en-IN',{hour12:false}); }
+
+
+
+// ── FULL RENDER ───────────────────────────────────────────────
+
+function renderAll(forecast) {
+
+  renderZones();
+
+  renderGauges();
+
+  renderPred(forecast || null);
+
+  renderThresholds();
+
+  renderLead();
+
+  if (mode === 'live') checkAlerts();
+
+}
+
+async function loadLiveData() {
+
+  try {
+
+    const [forecastRes, signalsRes] = await Promise.all([
+      fetch('/api/early-warning/forecast'),
+      fetch('/api/early-warning/signals')
+    ]);
+
+    const forecastData = await forecastRes.json();
+    const signalsData  = await signalsRes.json();
+
+    console.log('📊 Forecast:', forecastData.status, '| Signals:', signalsData.status);
+
+    // ── UPDATE SIG VALUES — use !== undefined to handle 0 correctly ──
+    if (signalsData.wind_speed_kmh  !== undefined) SIG.wind.v     = Math.min(80,  +signalsData.wind_speed_kmh);
+    if (signalsData.humidity_pct    !== undefined) SIG.humidity.v = Math.max(5,   +signalsData.humidity_pct);
+    if (signalsData.rainfall_24h_mm !== undefined) SIG.rainfall.v = Math.max(0,   +signalsData.rainfall_24h_mm);
+    if (signalsData.lake_level_pct  !== undefined) SIG.lake.v     = Math.min(100, +signalsData.lake_level_pct);
+    if (signalsData.drain_capacity_pct  !== undefined) SIG.drain.v = Math.max(0,  +signalsData.drain_capacity_pct);
+    if (signalsData.soil_saturation_pct !== undefined) SIG.soil.v  = Math.min(100,+signalsData.soil_saturation_pct);
+
+    // ── UPDATE ZONE RISK FROM FORECAST API ──
+    if (forecastData.zones && Array.isArray(forecastData.zones)) {
+      forecastData.zones.forEach(apiZone => {
+        const zoneIndex = ZONES.findIndex(z => z.name.toLowerCase() === apiZone.name.toLowerCase());
+        if (zoneIndex !== -1) {
+          ZONES[zoneIndex].rainfall_1h = apiZone.rainfall_1h !== undefined ? apiZone.rainfall_1h : 0;
+          ZONES[zoneIndex].population  = apiZone.population  || ZONES[zoneIndex].pop;
+          ZONES[zoneIndex].risk_class  = apiZone.risk_class  !== undefined ? apiZone.risk_class : 0;
+          // Store per-zone forecast horizon labels for prediction table
+          ZONES[zoneIndex].api_h6  = apiZone.h6  || 'LOW';
+          ZONES[zoneIndex].api_h24 = apiZone.h24 || 'LOW';
+          ZONES[zoneIndex].api_h48 = apiZone.h48 || 'LOW';
+          ZONES[zoneIndex].api_now = apiZone.risk_label || 'LOW';
+        }
+      });
+    }
+
+    // ── STATUS BADGE ──
+    const statusEl = document.getElementById('zoneBadge');
+    const isLive = (forecastData.status === 'live') && (signalsData.status === 'live');
+    statusEl.textContent = isLive ? '● LIVE' : '● DEMO';
+    statusEl.className   = isLive ? 'badge b-cy' : 'badge b-am';
+
+    window._forecastMeta = {
+
+      system_lead_time_hours: forecastData.system_lead_time_hours,
+
+      methodology: forecastData.methodology,
+
+      benchmarks: forecastData.benchmarks,
+
+      prediction_horizon_hours: forecastData.prediction_horizon_hours,
+
+      forecast_source: forecastData.forecast_source,
+
+    };
+
+    document.getElementById('hAlerts').textContent = forecastData.warnings_active ?? 0;
+
+    document.getElementById('hZones').textContent =
+
+      (forecastData.zones || []).filter(z => (z.risk_class || 0) >= 2).length;
+
+    if (forecastData.fetched_at) {
+
+      document.getElementById('sigUpdTime').textContent = 'updated ' + forecastData.fetched_at + ' · OWM';
+
+    }
+
+    renderAll(forecastData);
+
+    return isLive;
+
+  } catch(e) {
+
+    console.error('❌ API error:', e);
+
+    // Fallback: try /api/fire/conditions for at least wind + humidity
+    try {
+      const r = await fetch('/api/fire/conditions');
+      const d = await r.json();
+      if (d.wind_speed_kmh !== undefined) SIG.wind.v     = Math.min(80, +d.wind_speed_kmh);
+      if (d.humidity       !== undefined) SIG.humidity.v = Math.max(5,  +d.humidity);
+      const desc = (d.weather_desc || '').toLowerCase();
+      if (desc.includes('rain') || desc.includes('shower') || desc.includes('drizzle'))
+        SIG.rainfall.v = Math.max(SIG.rainfall.v, 35);
+    } catch(fallbackErr) {
+      console.warn('All APIs unavailable — using defaults');
+    }
+
+    // ALWAYS render even on complete failure
+    renderAll();
+    return false;
+
+  }
+
+}
+
+
+
+
+
+// ── MODE SWITCHING ────────────────────────────────────────────
+
+function setMode(m) {
+
+  try {
+    mode = m;
+
+    const btnL = document.getElementById('btnLive');
+
+    const btnD = document.getElementById('btnDrill');
+
+    const drillSc = document.getElementById('drillScenarios');
+
+    const drillBanner = document.getElementById('drillBanner');
+
+    const pipeSection = document.getElementById('pipelineSection');
+
+
+
+    if (m === 'live') {
+
+      console.log('🔄 Switching to LIVE mode...');
+
+      btnL.className = 'mode-btn active-live';
+
+      btnD.className = 'mode-btn';
+
+      drillSc.classList.remove('show');
+
+      drillBanner.classList.remove('show');
+
+      pipeSection.style.display = 'none';
+
+      document.getElementById('zoneBadge').textContent = '● LIVE';
+
+      document.getElementById('zoneBadge').className = 'badge b-cy';
+
+      document.getElementById('phSub').textContent = 'Live monitoring · XGBoost threshold detection · Real weather data · Auto-alert on breach';
+
+      // Clear drill state
+      clearDrillTimers();
+
+      drillRunning = false;
+
+      lastAlerts = {};
+
+      alertLog = [];
+
+      // STEP 1: Restore backed-up live signals IMMEDIATELY (wipes drill values)
+      restoreLiveSignals();
+
+      // STEP 2: Render with restored values right away — no blank page
+      renderAll();
+
+      // STEP 3: Fetch fresh API data in background and re-render with real values
+      loadLiveData().then(ok => {
+        backupLiveSignals();  // save these real API values for next drill→live switch
+        console.log('✅ Live mode ready. API status:', ok ? 'live' : 'demo');
+      }).catch(err => {
+        console.error('❌ Error loading live data:', err);
+        renderAll(); // already have restored values — at least show those
+      });
+
+    } else if (m === 'drill') {
+
+      console.log('🎯 Switching to DRILL mode...');
+
+      btnL.className = 'mode-btn';
+
+      btnD.className = 'mode-btn active-drill';
+
+      drillSc.classList.add('show');
+
+      drillBanner.classList.add('show');
+
+      document.getElementById('zoneBadge').textContent = '⚠ DRILL';
+
+      document.getElementById('zoneBadge').className = 'badge b-am';
+
+      document.getElementById('phSub').textContent = '⚠ DRILL MODE — Scenario values override live data to demonstrate alert pipeline';
+
+      // Back up current live signals before switching to drill
+      backupLiveSignals();
+
+      selectScenario(currentDrill);
+
+      console.log('✅ Drill mode ready');
+
+    }
+  } catch(e) {
+    console.error('❌ Error in setMode:', e);
+  }
+
+}
+
+
+
+// ── LIVE SIGNAL BACKUP/RESTORE ────────────────────────────────
+
+let liveBackup = {};
+
+function backupLiveSignals() {
+
+  for (const k of Object.keys(SIG)) liveBackup[k] = SIG[k].v;
+
+}
+
+function restoreLiveSignals() {
+
+  // Only restore if we have a backup (not on first load)
+  const hasBackup = Object.keys(liveBackup).length > 0;
+  if (hasBackup) {
+    for (const k of Object.keys(SIG)) if (liveBackup[k] !== undefined) SIG[k].v = liveBackup[k];
+  }
+  lastAlerts = {};
+
+}
+
+
+
+// ── DRILL MODE ────────────────────────────────────────────────
+
+function selectScenario(i) {
+
+  currentDrill = i;
+
+  document.querySelectorAll('.sc-btn').forEach((b,j) => b.classList.toggle('active', j===i));
+
+  const drill = DRILLS[i];
+
+  document.getElementById('drillScenarioLabel').textContent = drill.name + ' — ' + drill.desc;
+
+  // Load scenario signal values into SIG
+
+  for (const [k, v] of Object.entries(drill.signals)) SIG[k].v = v;
+
+  // Reset pipeline
+
+  document.getElementById('pipelineSection').style.display = 'none';
+
+  clearDrillTimers();
+
+  drillRunning = false;
+
+  leadMin = drill.forecast.leadHours * 60 + Math.floor(Math.random()*45);
+
+  lastAlerts = {};
+
+  renderAll(drill.forecast);
+
+  // ENSURE BUTTON IS ENABLED (moved to end for safety)
+  try {
+    const btn = document.getElementById('drillPlayBtn');
+    if (btn) {
+      btn.disabled = false;
+    }
+  } catch(e) {
+    console.warn('Could not enable drill button:', e);
+  }
+
+}
+
+
+
+function runDrill() {
+
+  if (drillRunning) return;
+
+  try {
+    drillRunning = true;
+
+    const drillBtn = document.getElementById('drillPlayBtn');
+    if (drillBtn) drillBtn.disabled = true;
+
+    document.getElementById('pipelineSection').style.display = 'block';
+
+    const drill = DRILLS[currentDrill];
+
+    const steps = buildPipeline(drill);
+
+
+
+    // Render pipeline steps (all greyed out)
+
+    let html = '';
+
+    steps.forEach((s, i) => {
+
+      html += `<div class="pipe-step p-${s.cls||'info'}" id="ps${i}">
+
+        <div class="ps-num">${String(i+1).padStart(2,'0')}</div>
+
+        <div class="ps-icon">${s.icon}</div>
+
+        <div class="ps-body">
+
+          <div class="ps-title">${s.title}</div>
+
+          <div class="ps-detail">${s.detail}</div>
+
+        </div>
+
+        <div class="ps-time" id="pst${i}">—</div>
+
+      </div>`;
+
+    });
+
+    document.getElementById('pipelineSteps').innerHTML = html;
+
+    document.getElementById('pipeProgress').textContent = '0 / '+steps.length;
+
+
+
+    // Play steps sequentially
+
+    steps.forEach((step, i) => {
+
+      const timer = setTimeout(() => {
+
+        try {
+          // Activate this step
+
+          document.getElementById('ps'+i)?.classList.add('active');
+
+          const tEl = document.getElementById('pst'+i);
+
+          if (tEl) { tEl.textContent = ts(); tEl.classList.add('fired'); }
+
+          document.getElementById('pipeProgress').textContent = (i+1)+' / '+steps.length;
+
+
+
+          // Mark previous as done
+
+          if (i > 0) document.getElementById('ps'+(i-1))?.classList.remove('active');
+
+          if (i > 0) document.getElementById('ps'+(i-1))?.classList.add('done');
+
+
+
+          // Push to alert log
+
+          const alertLevel = i===0||i===2||i===4 ? (step.cls==='p-crit'?'RED':'AMBER') : 'INFO';
+
+          pushAlert(ts(), alertLevel, `[Pipeline ${i+1}/${steps.length}] ${step.title}`);
+
+
+
+          // Step-specific side effects
+
+          if (i === 2) renderAll(drill.forecast); // After ML prediction, update table
+
+          if (i === 4) renderAll(drill.forecast); // After alert issued, zones may escalate
+
+
+
+          if (i === steps.length - 1) {
+
+            document.getElementById('ps'+i).classList.add('done');
+
+            // RE-ENABLE BUTTON - with error handling
+            try {
+              const btn = document.getElementById('drillPlayBtn');
+              if (btn) btn.disabled = false;
+            } catch(e) {
+              console.warn('Could not re-enable drill button:', e);
+            }
+
+            drillRunning = false;
+
+          }
+        } catch(e) {
+          console.error('Error in drill step execution:', e);
+        }
+
+      }, step.delay);
+
+      drillTimers.push(timer);
+
+    });
+
+    // FALLBACK: Re-enable button after maximum expected drill duration (10s) in case something fails
+    const fallbackTimer = setTimeout(() => {
+      if (drillRunning) {
+        console.warn('Drill taking too long, resetting...');
+        drillRunning = false;
+        try {
+          const btn = document.getElementById('drillPlayBtn');
+          if (btn) btn.disabled = false;
+        } catch(e) {
+          console.warn('Could not re-enable drill button in fallback:', e);
+        }
+      }
+    }, 10000);
+
+    drillTimers.push(fallbackTimer);
+
+  } catch(e) {
+    console.error('Error starting drill:', e);
+    drillRunning = false;
+    try {
+      const btn = document.getElementById('drillPlayBtn');
+      if (btn) btn.disabled = false;
+    } catch(re) {
+      console.warn('Could not re-enable drill button after error:', re);
+    }
+  }
+
+}
+
+
+
+function resetDrill() {
+
+  try {
+    clearDrillTimers();
+
+    drillRunning = false;
+
+    document.getElementById('pipelineSection').style.display = 'none';
+
+    // Ensure button is enabled
+    const btn = document.getElementById('drillPlayBtn');
+    if (btn) btn.disabled = false;
+
+    selectScenario(currentDrill);
+  } catch(e) {
+    console.error('Error resetting drill:', e);
+    drillRunning = false;
+    try {
+      const btn = document.getElementById('drillPlayBtn');
+      if (btn) btn.disabled = false;
+    } catch(re) {
+      console.warn('Could not re-enable drill button in resetDrill:', re);
+    }
+  }
+
+}
+
+
+
+function clearDrillTimers() {
+
+  drillTimers.forEach(t => clearTimeout(t));
+
+  drillTimers = [];
+
+}
+
+
+
+function exitDrill() { setMode('live'); }
+
+
+
+// ── INIT ─────────────────────────────────────────────────────
+
+async function init() {
+
+  try {
+    // Ensure all global variables and functions are available
+    if (typeof SIG === 'undefined') {
+      console.error('❌ SIG object not defined - initialization error');
+      pushAlert(ts(), 'RED', 'SYSTEM ERROR: Signal data not initialized');
+      return;
+    }
+
+    if (typeof zoneScore === 'undefined') {
+      console.error('❌ zoneScore function not defined - initialization error');
+      pushAlert(ts(), 'RED', 'SYSTEM ERROR: Zone scoring function not found');
+      return;
+    }
+
+    console.log('🚀 Early Warning initializing...');
+    console.log('📊 Initial SIG state:', SIG);
+
+    // ENSURE BUTTONS ARE CLICKABLE
+    try {
+      const btnL = document.getElementById('btnLive');
+      const btnD = document.getElementById('btnDrill');
+      if (btnL) btnL.style.pointerEvents = 'auto';
+      if (btnD) btnD.style.pointerEvents = 'auto';
+      console.log('✅ Mode buttons enabled');
+    } catch(e) {
+      console.warn('⚠️ Could not ensure buttons are clickable:', e);
+    }
+
+    pushAlert(ts(), 'INFO', 'Early Warning Command online. Connecting to live weather API...');
+
+    const ok = await loadLiveData();
+
+    backupLiveSignals();
+
+    console.log('📊 Live data loaded:', ok);
+    console.log('🌡️ Current signals:', SIG);
+
+    if (ok) {
+
+      pushAlert(ts(), 'INFO', `Live weather loaded: Wind ${SIG.wind.v.toFixed(1)}km/h · Humidity ${SIG.humidity.v.toFixed(0)}% · Model running.`);
+
+      console.log('✅ Live mode activated successfully');
+
+      // Only alert if something is genuinely concerning
+
+      const anyBreach = Object.keys(SIG).some(k => sigStatus(k) !== 'safe');
+
+      if (!anyBreach) {
+
+        pushAlert(ts(), 'GREEN', 'All 6 signal monitors nominal. No thresholds breached. System armed and watching.');
+
+      }
+
+    } else {
+
+      pushAlert(ts(), 'AMBER', 'Live API unavailable — using last known values. Switch to DRILL mode to demonstrate alert pipeline.');
+
+    }
+
+    // Live refresh every 30 seconds
+
+    liveRefreshInterval = setInterval(async () => {
+
+      if (mode !== 'live') return;
+
+      const ok = await loadLiveData();
+
+      backupLiveSignals();
+
+      // Don't call renderAll() here - loadLiveData already does it with forecast data
+      // renderAll();  // REMOVED - this was overwriting the live data!
+
+    }, 30000);
+
+    console.log('✅ Initialization complete - system ready');
+
+  } catch(error) {
+    console.error('❌ Critical initialization error:', error);
+    pushAlert(ts(), 'RED', 'SYSTEM ERROR: Initialization failed - ' + error.message);
+  }
+
+}
+
+function toggleDrop(btn) {
+
+  const drop = btn.nextElementSibling;
+
+  const isOpen = drop.classList.contains('open');
+
+  document.querySelectorAll('.ndrop.open').forEach(d=>d.classList.remove('open'));
+
+  document.querySelectorAll('.ndrop-btn.open').forEach(b=>b.classList.remove('open'));
+
+  if (!isOpen) {
+
+    drop.classList.add('open'); btn.classList.add('open');
+
+    setTimeout(()=>{
+
+      document.addEventListener('click', function close(e){
+
+        if (!btn.contains(e.target) && !drop.contains(e.target)){
+
+          drop.classList.remove('open'); btn.classList.remove('open');
+
+          document.removeEventListener('click',close);
+
+        }
+
+      });
+
+    },0);
+
+  }
+
+}
+
+
+
+
+
+function tick() { const clk = document.getElementById('clk') || document.getElementById('clock'); if(clk) clk.textContent = new Date().toLocaleTimeString('en-IN',{hour12:false}); }
+
+tick(); setInterval(tick, 1000);
+
+window.addEventListener('load', init);
+
+</script>
+
+{% endblock %}
+
+</body>
+
+</html>

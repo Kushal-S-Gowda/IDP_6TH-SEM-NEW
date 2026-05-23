@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}Citizen Dashboard{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.page-hdr{display:flex;justify-content:space-between;align-items:flex-end;padding:24px 40px 18px;border-bottom:1px solid var(--c-border);}
+.ph-eye{font-family:var(--font-mono);font-size:.63rem;color:var(--c-cyan);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:8px;}
+.ph-eye::before{content:'';width:16px;height:1px;background:var(--c-cyan);}
+.ph-ttl{font-family:var(--font-ui);font-weight:700;font-size:1.6rem;letter-spacing:-.5px;text-transform:uppercase;}
+.ph-sub{font-size:.79rem;color:var(--c-text-2);margin-top:3px;}
+.search-wrap{padding:16px 40px;border-bottom:1px solid var(--c-border);background:var(--c-surface);}
+.search-bar{display:flex;max-width:580px;border:1px solid var(--c-border);border-radius:4px;overflow:hidden;transition:border-color .18s;}
+.search-bar:focus-within{border-color:var(--c-border-hi);}
+.s-icon{padding:0 14px;display:flex;align-items:center;color:var(--c-text-3);}
+.s-input{flex:1;background:transparent;border:none;outline:none;color:var(--c-text);font-family:var(--font-ui);font-size:.95rem;padding:12px 0;}
+.s-input::placeholder{color:var(--c-text-3);}
+.s-btn{background:var(--c-cyan);color:var(--c-bg);border:none;cursor:pointer;font-family:var(--font-ui);font-weight:700;font-size:.75rem;letter-spacing:1px;text-transform:uppercase;padding:0 20px;transition:background .18s;}
+.s-btn:hover{background:#33daff;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--c-border);}
+.grid2-full{background:var(--c-bg);border-bottom:1px solid var(--c-border);}
+.panel{background:var(--c-bg);padding:24px 30px;}
+.ptitle{font-family:var(--font-mono);font-size:.63rem;color:var(--c-text-3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:7px;}
+.ptitle::before{content:'';width:3px;height:11px;background:var(--c-cyan);border-radius:1px;}
+.risk-box{background:var(--c-surface);border:1px solid var(--c-border);border-radius:4px;padding:22px;text-align:center;}
+.r-city{font-family:var(--font-mono);font-size:.65rem;color:var(--c-text-3);letter-spacing:1.5px;margin-bottom:10px;}
+.r-big{font-family:var(--font-ui);font-weight:700;font-size:2.6rem;letter-spacing:2px;text-transform:uppercase;line-height:1;}
+.r-action{font-size:.83rem;color:var(--c-text-2);margin-top:8px;}
+.r-conf{font-family:var(--font-mono);font-size:.65rem;color:var(--c-text-3);margin-top:5px;}
+.rL .r-big{color:var(--c-green);}
+.rM .r-big{color:var(--c-amber);}
+.rH .r-big{color:#ff6f00;}
+.rE .r-big{color:var(--c-red);animation:rpulse 1s infinite;}
+@keyframes rpulse{0%,100%{opacity:1}50%{opacity:.55}}
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.wcell{background:var(--c-surface2);border:1px solid var(--c-border);border-radius:4px;padding:12px 14px;}
+.wv{font-family:var(--font-ui);font-weight:700;font-size:1.4rem;color:var(--c-cyan);letter-spacing:-.5px;}
+.wl{font-family:var(--font-mono);font-size:.58rem;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px;}
+.wdesc{font-family:var(--font-mono);font-size:.62rem;color:var(--c-text-3);margin-top:10px;padding-top:10px;border-top:1px solid var(--c-border);}
+.prow{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.plbl{font-family:var(--font-mono);font-size:.62rem;color:var(--c-text-3);width:65px;text-transform:uppercase;}
+.ptrack{flex:1;background:var(--c-surface2);border-radius:2px;height:16px;overflow:hidden;}
+.pfill{height:100%;border-radius:2px;transition:width .6s;}
+.ppct{font-family:var(--font-mono);font-size:.65rem;color:var(--c-text-2);width:36px;text-align:right;}
+.evac{background:rgba(255,45,85,.05);border:1px solid rgba(255,45,85,.2);border-radius:4px;padding:20px 24px;}
+.evac-ttl{font-family:var(--font-ui);font-weight:700;font-size:.85rem;letter-spacing:1px;text-transform:uppercase;color:var(--c-red);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.evac-ttl::before{content:'';width:3px;height:13px;background:var(--c-red);border-radius:1px;}
+.ez{background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.18);border-radius:3px;padding:12px 14px;margin-bottom:12px;}
+.ez-name{font-family:var(--font-ui);font-weight:700;font-size:.95rem;color:var(--c-green);}
+.ez-meta{font-family:var(--font-mono);font-size:.62rem;color:var(--c-text-3);margin-top:3px;}
+.inst{font-size:.78rem;color:var(--c-text-2);padding:5px 0;border-bottom:1px solid var(--c-border);display:flex;gap:8px;align-items:flex-start;}
+.inst:last-child{border-bottom:none;}
+.inum{font-family:var(--font-mono);font-size:.62rem;color:var(--c-text-3);flex-shrink:0;}
+.cc{font-family:var(--font-mono);font-size:.62rem;background:rgba(255,45,85,.1);border:1px solid rgba(255,45,85,.2);border-radius:3px;padding:4px 9px;color:var(--c-red);cursor:pointer;transition:background .18s;display:inline-block;margin:3px;}
+.cc:hover{background:rgba(255,45,85,.22);}
+.loading{display:none;text-align:center;padding:52px;}
+.spinner{width:30px;height:30px;margin:0 auto 14px;border:2px solid var(--c-border);border-top-color:var(--c-cyan);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{font-family:var(--font-mono);font-size:.65rem;color:var(--c-text-3);letter-spacing:1px;}
+#results{display:none;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hdr">
+  <div>
+    <div class="ph-eye">Real-Time Assessment</div>
+    <div class="ph-ttl">Citizen <span style="color:var(--c-cyan)">Risk Dashboard</span></div>
+    <div class="ph-sub">Enter any Indian city for live flood risk, evacuation routing and 48-hour forecast</div>
+  </div>
+</div>
+
+<div class="search-wrap">
+  <div class="search-bar">
+    <span class="s-icon">&#128205;</span>
+    <input class="s-input" id="cityInput" placeholder="Bengaluru, Chennai, Mumbai, Hyderabad..." value="Bengaluru">
+    <button class="s-btn" onclick="checkRisk()">Check Risk &#8594;</button>
+  </div>
+</div>
+
+<div class="loading" id="loading"><div class="spinner"></div><p>FETCHING LIVE WEATHER &#183; RUNNING AI PREDICTION...</p></div>
+
+<div id="results">
+  <div class="grid2">
+    <div class="panel">
+      <div class="ptitle">Risk Assessment</div>
+      <div class="risk-box rL" id="riskBox">
+        <div class="r-city" id="rCity">—</div>
+        <div class="r-big" id="rLabel">—</div>
+        <div class="r-action" id="rAction">—</div>
+        <div class="r-conf" id="rConf">—</div>G 
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">Current Conditions</div>
+      <div class="wgrid">
+        <div class="wcell"><div class="wv" id="wT">—</div><div class="wl">Temperature</div></div>
+        <div class="wcell"><div class="wv" id="wH">—</div><div class="wl">Humidity</div></div>
+        <div class="wcell"><div class="wv" id="wR">—</div><div class="wl">Rainfall/hr</div></div>
+        <div class="wcell"><div class="wv" id="wW">—</div><div class="wl">Wind Speed</div></div>
+      </div>
+      <div class="wdesc" id="wD">—</div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">Risk Probabilities</div>
+      <div id="probBars"></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">48-Hour Rainfall Forecast</div>
+      <canvas id="fcChart" height="155"></canvas>
+    </div>
+  </div>
+  <div class="grid2-full" id="evacSec" style="display:none;padding:24px 30px;">
+    <div class="ptitle" style="margin-bottom:16px;">Evacuation Guidance</div>
+    <div class="evac">
+      <div class="evac-ttl">&#128680; Evacuation Recommended</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:.6rem;color:var(--c-text-3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Primary Safe Zone</div>
+          <div class="ez"><div class="ez-name" id="szName">—</div><div class="ez-meta" id="szMeta">—</div></div>
+          <div style="font-family:var(--font-mono);font-size:.6rem;color:var(--c-text-3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;margin-top:10px;">Alternate Zones</div>
+          <div id="altZ"></div>
+        </div>
+        <div>
+          <div style="font-family:var(--font-mono);font-size:.6rem;color:var(--c-text-3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Instructions</div>
+          <div id="insts"></div>
+        </div>
+        <div>
+          <div style="font-family:var(--font-mono);font-size:.6rem;color:var(--c-text-3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Emergency Contacts</div>
+          <div id="conts"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let ci=null;
+const PC={LOW:'#00e676',MEDIUM:'#ffb300',HIGH:'#ff6f00',EXTREME:'#ff2d55'};
+const RC={LOW:'rL',MEDIUM:'rM',HIGH:'rH',EXTREME:'rE'};
+async function checkRisk(){
+  const city=document.getElementById('cityInput').value.trim();
+  if(!city){
+    alert('Please enter a city name');
+    return;
+  }
+  console.log('Checking risk for:', city);
+  document.getElementById('loading').style.display='block';
+  document.getElementById('results').style.display='none';
+  try{
+    const response = await fetch(`/api/citizen/risk?city=${encodeURIComponent(city)}`);
+    console.log('Response status:', response.status);
+    const d = await response.json();
+    console.log('Response data:', d);
+    if(d.status==='error'){
+      document.getElementById('loading').style.display='none';
+      alert(d.message || 'Unable to fetch live risk right now. Please try again in a few minutes.');
+      return;
+    }
+    render(d);
+    document.getElementById('loading').style.display='none';
+    document.getElementById('results').style.display='block';
+  }catch(e){
+    console.error('Error:', e);
+    document.getElementById('loading').style.display='none';
+    alert('Unable to contact the server. Please ensure the Flask app is running and you have internet access. Error: ' + e.message);
+  }
+}
+function render(d){
+  console.log('Rendering data:', d);
+  if (!d) {
+    console.error('No data received');
+    alert('No data received from server');
+    return;
+  }
+  const p=d.prediction,w=d.weather;
+  console.log('Prediction:', p);
+  console.log('Weather:', w);
+  if (!p || !w) {
+    console.error('Missing prediction or weather data');
+    alert('Incomplete data received from server');
+    return;
+  }
+  const box=document.getElementById('riskBox');
+  box.className='risk-box '+RC[p.risk_label];
+  document.getElementById('rCity').textContent=(d.city || 'Unknown').toUpperCase();
+  document.getElementById('rLabel').textContent=p.risk_label+' RISK';
+  document.getElementById('rAction').textContent=p.action;
+  document.getElementById('rConf').textContent='AI CONFIDENCE: '+p.risk_score+'%';
+  document.getElementById('wT').textContent=(w.temp || 0)+'°C';
+  document.getElementById('wH').textContent=(w.humidity || 0)+'%';
+  document.getElementById('wR').textContent=(w.rain_1h || 0)+'mm';
+  document.getElementById('wW').textContent=(w.wind_kmh || 0)+'km/h';
+  document.getElementById('wD').textContent='CONDITION: '+(w.description || 'Unknown').toUpperCase();
+  let ph='';
+  if (p.probabilities) {
+    for(const[l,v] of Object.entries(p.probabilities)){
+      ph+=`<div class="prow"><span class="plbl">${l}</span><div class="ptrack"><div class="pfill" style="width:${v}%;background:${PC[l]};"></div></div><span class="ppct">${v}%</span></div>`;
+    }
+  }
+  document.getElementById('probBars').innerHTML=ph;
+  const fc=d.forecast_chart;
+  if(ci)ci.destroy();
+  if (fc && fc.labels && fc.rainfall) {
+    ci=new Chart(document.getElementById('fcChart').getContext('2d'),{
+      type:'bar',data:{labels:fc.labels,datasets:[{label:'Rainfall mm',data:fc.rainfall,backgroundColor:fc.risk_levels.map(c=>c==='red'?'rgba(255,45,85,.75)':c==='orange'?'rgba(255,111,0,.75)':c==='yellow'?'rgba(255,179,0,.75)':'rgba(0,230,118,.75)'),borderRadius:3}]},
+      options:{plugins:{legend:{labels:{color:'#6a96b5',font:{family:'JetBrains Mono',size:9}}}},scales:{x:{ticks:{color:'#2e5573',font:{family:'JetBrains Mono',size:8},maxRotation:45},grid:{color:'rgba(0,210,255,.04)'}},y:{ticks:{color:'#2e5573',font:{family:'JetBrains Mono',size:8}},grid:{color:'rgba(0,210,255,.04)'}}}}
+    });
+  }
+  if(p.risk_class>=2&&d.evacuation_plan){
+    const ep=d.evacuation_plan,pz=ep.primary_safe_zone;
+    document.getElementById('evacSec').style.display='block';
+    document.getElementById('szName').textContent=pz.name;
+    document.getElementById('szMeta').textContent=`${pz.road_distance_km} km · ${pz.road_duration_min} min · ${pz.elevation}m`;
+    document.getElementById('altZ').innerHTML=(ep.alternate_safe_zones||[]).map(z=>`<div style="font-size:.75rem;color:var(--c-text-3);padding:4px 0;border-bottom:1px solid var(--c-border);">▸ ${z.name} · ${z.straight_distance_km} km</div>`).join('');
+    document.getElementById('insts').innerHTML=(ep.instructions||[]).map((s,i)=>`<div class="inst"><span class="inum">${String(i+1).padStart(2,'0')}</span>${s}</div>`).join('');
+    document.getElementById('conts').innerHTML=Object.entries(ep.emergency_contacts||{}).map(([n,v])=>`<span class="cc" onclick="alert('${n}: ${v}')">📞 ${n}: ${v}</span>`).join('');
+  }else{document.getElementById('evacSec').style.display='none';}
+}
+window.onload=()=>checkRisk();
+</script>
+{% endblock %}

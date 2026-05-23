@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+{% block title %}Authority Dashboard{% endblock %}
+{% block head %}
+<style>
+.ph{padding:22px 40px 16px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:flex-end;}
+.phe{font-family:var(--fm);font-size:.62rem;color:var(--rd);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:8px;}
+.phe::before{content:'';width:16px;height:1px;background:var(--rd);}
+.pht{font-family:var(--fu);font-weight:700;font-size:1.6rem;letter-spacing:-.5px;text-transform:uppercase;}
+.phs{font-size:.79rem;color:var(--t2);margin-top:3px;}
+.strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--bd);border-bottom:1px solid var(--bd);}
+.sc{background:var(--bg);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;}
+.scl{font-family:var(--fm);font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;}
+.scv{font-family:var(--fu);font-weight:700;font-size:1.8rem;letter-spacing:-1px;}
+.main-g{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd);}
+.panel{background:var(--bg);padding:22px 28px;}
+.pt{font-family:var(--fm);font-size:.62rem;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.ptl{display:flex;align-items:center;gap:7px;}
+.ptl::before{content:'';width:3px;height:11px;background:var(--cy);border-radius:1px;}
+table{width:100%;border-collapse:collapse;}
+th{font-family:var(--fm);font-size:.58rem;letter-spacing:1px;text-transform:uppercase;color:var(--t3);padding:6px 10px;border-bottom:1px solid var(--bd);text-align:left;font-weight:500;}
+td{padding:9px 10px;font-size:.82rem;color:var(--t2);border-bottom:1px solid rgba(0,210,255,.04);vertical-align:middle;}
+tr:hover td{background:rgba(0,210,255,.03);}
+.rp{display:inline-flex;align-items:center;border-radius:3px;padding:2px 8px;font-family:var(--fu);font-weight:700;font-size:.68rem;letter-spacing:1px;text-transform:uppercase;}
+.pL{background:rgba(0,230,118,.1);color:#00e676;border:1px solid rgba(0,230,118,.2);}
+.pM{background:rgba(255,179,0,.1);color:#ffb300;border:1px solid rgba(255,179,0,.2);}
+.pH{background:rgba(255,111,0,.1);color:#ff6f00;border:1px solid rgba(255,111,0,.2);}
+.pE{background:rgba(255,45,85,.12);color:#ff2d55;border:1px solid rgba(255,45,85,.25);animation:rp 1.2s infinite;}
+.pG{background:rgba(0,230,118,.1);color:#00e676;border:1px solid rgba(0,230,118,.2);}
+.pI{background:rgba(0,210,255,.1);color:#00d2ff;border:1px solid rgba(0,210,255,.2);}
+@keyframes rp{0%,100%{opacity:1}50%{opacity:.55}}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.rl{font-family:var(--fm);font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.ri{background:var(--sf2);border:1px solid var(--bd);border-radius:4px;padding:8px 12px;color:var(--t1);font-family:var(--fm);font-size:.85rem;width:100%;outline:none;text-align:center;transition:border-color .18s;}
+.ri:focus{border-color:var(--bdh);}
+.ob{width:100%;background:var(--rd);color:#fff;border:none;border-radius:4px;padding:12px;font-family:var(--fu);font-weight:700;font-size:.82rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .18s;margin-top:2px;}
+.ob:hover{background:#ff5470;box-shadow:0 4px 20px rgba(255,45,85,.3);transform:translateY(-1px);}
+.ac{background:var(--sf);border:1px solid var(--bd);border-radius:4px;padding:13px 15px;margin-bottom:7px;border-left:3px solid var(--cy);}
+.acH{border-left-color:#ff6f00;}
+.acE{border-left-color:var(--rd);}
+.acM{border-left-color:var(--am);}
+.ach{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.chips{display:flex;flex-wrap:wrap;gap:5px;}
+.chip{font-family:var(--fm);font-size:.6rem;background:var(--sf2);border:1px solid var(--bd);border-radius:3px;padding:3px 8px;color:var(--t2);}
+.rb{background:var(--rd);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:.7rem;flex-shrink:0;}
+.ph2{text-align:center;padding:32px;color:var(--t3);}
+.ph2 p{font-family:var(--fm);font-size:.65rem;letter-spacing:1px;margin-top:8px;}
+.sp{width:28px;height:28px;margin:0 auto;border:2px solid var(--bd);border-top-color:var(--rd);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rb2{background:transparent;border:1px solid var(--bd);border-radius:3px;padding:4px 10px;color:var(--t3);font-family:var(--fm);font-size:.6rem;cursor:pointer;transition:all .18s;}
+.rb2:hover{border-color:var(--bdh);color:var(--t2);}
+.rl2{display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--bd);border-radius:3px;padding:4px 11px;color:var(--t2);font-family:var(--fm);font-size:.62rem;text-decoration:none;transition:all .18s;}
+.rl2:hover{border-color:var(--bdh);color:var(--cy);}
+</style>
+{% endblock %}
+{% block content %}
+<div class="ph">
+  <div>
+    <div class="phe">Operations Centre</div>
+    <div class="pht">Authority <span style="color:var(--rd)">Command Dashboard</span></div>
+    <div class="phs">Live zone monitoring · LP resource allocation · Deployment planning · PDF reports</div>
+  </div>
+</div>
+<div class="strip">
+  <div class="sc"><span class="scl">Low Zones</span><span class="scv" style="color:var(--gn)" id="cL">—</span></div>
+  <div class="sc"><span class="scl">Medium Zones</span><span class="scv" style="color:var(--am)" id="cM">—</span></div>
+  <div class="sc"><span class="scl">High Zones</span><span class="scv" style="color:#ff6f00" id="cH">—</span></div>
+  <div class="sc"><span class="scl">Extreme Zones</span><span class="scv" style="color:var(--rd)" id="cE">—</span></div>
+  <div class="sc"><span class="scl">Pre-Alert Lead Time</span><span class="scv" style="color:var(--cy);font-size:1.35rem" id="cLead" title="Hours until earliest zone hits HIGH+ (OWM forecast)">—</span></div>
+</div>
+<div style="padding:8px 24px;border-bottom:1px solid var(--bd);font-family:var(--fm);font-size:.58rem;color:var(--t3);line-height:1.55;background:var(--sf);">
+  <span id="leadNote">Lead time from OpenWeatherMap 3h slots + ml/predict.py — full detail on <a href="/early-warning" style="color:var(--cy)">Early Warning Command</a>.</span>
+</div>
+<div class="main-g">
+  <div class="panel">
+    <div class="pt"><span class="ptl">Zone Risk Status</span><button class="rb2" onclick="loadZones()">↻ Refresh</button></div>
+    <div id="zL" class="ph2"><div class="sp"></div><p>LOADING LIVE ZONE DATA...</p></div>
+    <div id="zT" style="display:none;"><table><thead><tr><th>Zone</th><th>Risk Level</th><th>Population</th><th>Rainfall</th></tr></thead><tbody id="zB"></tbody></table></div>
+  </div>
+  <div class="panel">
+    <div class="pt"><span class="ptl">Resource Allocation Engine</span></div>
+    <div class="rg">
+      <div><div class="rl">🚑 Ambulances</div><input class="ri" id="rA" type="number" value="45"></div>
+      <div><div class="rl">🚤 Rescue Boats</div><input class="ri" id="rB" type="number" value="8"></div>
+      <div><div class="rl">🏕️ Camp Beds</div><input class="ri" id="rC" type="number" value="1500"></div>
+      <div><div class="rl">🍱 Food Units</div><input class="ri" id="rF" type="number" value="5000"></div>
+      <div style="grid-column:span 2"><div class="rl">👨‍⚕️ Medical Teams</div><input class="ri" id="rM" type="number" value="12"></div>
+    </div>
+    <button class="ob" onclick="runOpt()">⚙ Generate Optimal Deployment Plan</button>
+  </div>
+  <div class="panel" style="grid-column:span 2;border-top:1px solid var(--bd);">
+    <div class="pt"><span class="ptl">Deployment Plan</span><a href="/api/authority/report" class="rl2" target="_blank">📄 Download PDF Report</a></div>
+    <div id="aP" class="ph2"><p>RUN OPTIMIZATION TO GENERATE PLAN</p></div>
+    <div id="aL" style="display:none;" class="ph2"><div class="sp"></div><p>RUNNING LINEAR PROGRAMMING OPTIMIZATION...</p></div>
+    <div id="aC" style="display:none;"></div>
+  </div>
+</div>
+<script>
+const PC={LOW:'pL',MEDIUM:'pM',HIGH:'pH',EXTREME:'pE'};
+const BC={LOW:'',MEDIUM:'acM',HIGH:'acH',EXTREME:'acE'};
+async function loadLeadTime(){
+  try{
+    const f=await(await fetch('/api/early-warning/forecast')).json();
+    const el=document.getElementById('cLead');
+    const note=document.getElementById('leadNote');
+    const lh=f.system_lead_time_hours;
+    if(lh==null){
+      el.textContent='Clear';
+      el.style.color='var(--gn)';
+      if(note) note.textContent='No HIGH+ in next 48h OWM forecast window · '+ (f.methodology||'');
+    }else if(lh===0){
+      el.textContent='Now';
+      el.style.color='var(--rd)';
+    }else{
+      el.textContent=lh+'h';
+      el.style.color=lh<=6?'var(--rd)':lh<=24?'var(--am)':'var(--cy)';
+    }
+    if(note&&f.benchmarks){
+      const b=f.benchmarks;
+      note.innerHTML='vs IMD nowcast '+b.imd_nowcast_radar.typical_hours+'h · BBMP '+b.bbmp_manual.typical_hours+'h · FloodSense '+b.floodsense_pro.typical_hours+'h · <a href="/early-warning" style="color:var(--cy)">details</a>';
+    }
+  }catch(e){
+    document.getElementById('cLead').textContent='—';
+  }
+}
+async function loadZones(){
+  document.getElementById('zL').style.display='block';
+  document.getElementById('zT').style.display='none';
+  loadLeadTime();
+  try{
+    const d=await(await fetch('/api/authority/zones')).json();
+    const s=d.risk_summary;
+    ['L','M','H','E'].forEach((k,i)=>{
+      document.getElementById('c'+k).textContent=[s.LOW,s.MEDIUM,s.HIGH,s.EXTREME][i]||0;
+    });
+    document.getElementById('zB').innerHTML=[...d.zones].sort((a,b)=>b.risk_class-a.risk_class).map(z=>`
+      <tr><td><strong style="color:var(--t1)">${z.name}</strong></td>
+      <td><span class="rp ${PC[z.risk_label]}">${z.risk_label}</span></td>
+      <td>${z.population.toLocaleString()}</td>
+      <td style="font-family:var(--fm);font-size:.75rem">${z.rainfall_1h||0} mm/hr</td></tr>`).join('');
+    document.getElementById('zL').style.display='none';
+    document.getElementById('zT').style.display='block';
+  }catch(e){document.getElementById('zL').innerHTML='<p style="color:var(--rd);font-family:var(--fm);font-size:.65rem">FAILED TO LOAD</p>';}
+}
+async function runOpt(){
+  document.getElementById('aP').style.display='none';
+  document.getElementById('aL').style.display='block';
+  document.getElementById('aC').style.display='none';
+  try{
+    const d=await(await fetch('/api/authority/allocate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ambulances:+document.getElementById('rA').value,boats:+document.getElementById('rB').value,camp_beds:+document.getElementById('rC').value,food_units:+document.getElementById('rF').value,medical_teams:+document.getElementById('rM').value})})).json();
+    let h = `
+  <div style="font-family:var(--fm);font-size:.62rem;color:var(--t3);
+              margin-bottom:12px;padding:8px 12px;background:var(--sf);
+              border:1px solid var(--bd);border-radius:4px;">
+    ⚙ LP Optimizer allocated <strong style="color:var(--cy)">${d.allocation.length} zones</strong>
+    from total pool:
+    🚑 ${d.resources_available.ambulances} ambulances ·
+    🚤 ${d.resources_available.boats} boats ·
+    🏕️ ${d.resources_available.camp_beds} beds ·
+    🍱 ${d.resources_available.food_units} food units ·
+    👨‍⚕️ ${d.resources_available.medical_teams} teams
+    — distributed proportionally by risk level and population.
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">`;
+    for(const z of d.allocation){
+      h+=`<div class="ac ${BC[z.risk_label]}">
+        <div class="ach">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="rb">${z.priority}</span>
+            <strong style="font-size:.93rem">${z.name}</strong>
+          </div>
+          <span class="rp ${PC[z.risk_label]}" style="font-size:.65rem">${z.risk_label}</span>
+        </div>
+        <div class="chips">
+          <span class="chip">🚑 ${z.ambulances}</span>
+          <span class="chip">🚤 ${z.boats}</span>
+          <span class="chip">🏕️ ${z.camp_beds} beds</span>
+          <span class="chip">🍱 ${z.food_units} food</span>
+          <span class="chip">👨‍⚕️ ${z.medical_teams} teams</span>
+          <span class="chip">👥 ${z.population.toLocaleString()}</span>
+        </div>
+      </div>`;
+    }
+    if (d.allocation.length === 0) {
+      h += `<div style="grid-column:span 2;text-align:center;padding:24px;
+         font-family:var(--fm);font-size:.65rem;color:var(--gn);">
+    ✅ All zones currently LOW risk. No emergency deployment needed.
+    Resources remain on standby.
+  </div>`;
+    }
+    h+='</div>';
+    document.getElementById('aC').innerHTML=h;
+    document.getElementById('aL').style.display='none';
+    document.getElementById('aC').style.display='block';
+  }catch(e){alert('Error');}
+}
+
+</script>
+<!-- XAI PANEL -->
+<div style="background:var(--bg);border-top:1px solid var(--bd);padding:22px 28px;">
+
+  <!-- Header row -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div>
+      <div style="font-family:var(--fm);font-size:.62rem;color:var(--t3);letter-spacing:1.5px;
+                  text-transform:uppercase;display:flex;align-items:center;gap:7px;">
+        <span style="width:3px;height:11px;background:var(--vi);border-radius:1px;display:inline-block;"></span>
+        XAI — Model Explainability · Why did the model predict this risk?
+      </div>
+      <div style="font-family:var(--fm);font-size:.56rem;color:var(--t3);margin-top:4px;">
+        SHAP feature contributions · XGBoost · Per-zone breakdown
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <select id="xaiZoneSelect" onchange="loadXAI()"
+        style="background:var(--sf2);border:1px solid var(--bd);border-radius:4px;
+               padding:5px 10px;color:var(--t2);font-family:var(--fm);font-size:.64rem;outline:none;">
+        <option value="">── All Zones ──</option>
+        <option value="Bellandur">Bellandur</option>
+        <option value="HSR Layout">HSR Layout</option>
+        <option value="Koramangala">Koramangala</option>
+        <option value="Marathahalli">Marathahalli</option>
+        <option value="Electronic City">Electronic City</option>
+        <option value="Whitefield">Whitefield</option>
+        <option value="Indiranagar">Indiranagar</option>
+        <option value="Hebbal">Hebbal</option>
+      </select>
+      <button onclick="loadXAI()"
+        style="background:transparent;border:1px solid var(--bd);border-radius:3px;
+               padding:5px 12px;color:var(--t3);font-family:var(--fm);font-size:.6rem;cursor:pointer;">
+        ↻ Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div id="xaiLoading" style="text-align:center;padding:24px;color:var(--t3);">
+    <div style="width:24px;height:24px;margin:0 auto;border:2px solid var(--bd);
+                border-top-color:var(--vi);border-radius:50%;animation:spin .7s linear infinite;"></div>
+    <p style="font-family:var(--fm);font-size:.62rem;letter-spacing:1px;margin-top:8px;">
+      LOADING XAI DATA...
+    </p>
+  </div>
+
+  <!-- XAI content grid -->
+  <div id="xaiContent" style="display:none;">
+
+    <!-- Single zone explanation -->
+    <div id="xaiSingle" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+        <!-- Left: feature bar chart -->
+        <div style="background:var(--sf);border:1px solid var(--bd);border-radius:4px;padding:16px;">
+          <div style="font-family:var(--fm);font-size:.57rem;color:var(--t3);
+                      text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">
+            Feature Contributions (SHAP)
+          </div>
+          <div id="xaiBarChart"></div>
+        </div>
+
+        <!-- Right: summary + explanation text -->
+        <div style="background:var(--sf);border:1px solid var(--bd);border-radius:4px;padding:16px;">
+          <div style="font-family:var(--fm);font-size:.57rem;color:var(--t3);
+                      text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">
+            Model Reasoning
+          </div>
+          <div id="xaiSummary"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- All zones grid -->
+    <div id="xaiAllZones" style="display:none;">
+      <div id="xaiZoneGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ── ALERT HISTORY PANEL (DB) ───────────────────────────────── -->
+<div style="background:var(--bg);border-top:1px solid var(--bd);padding:22px 28px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <div style="font-family:var(--fm);font-size:.62rem;color:var(--t3);letter-spacing:1.5px;
+                text-transform:uppercase;display:flex;align-items:center;gap:7px;">
+      <span style="width:3px;height:11px;background:var(--rd);border-radius:1px;display:inline-block;"></span>
+      Persistent Alert History · SQLite Database
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <span id="dbStatsBadge" style="font-family:var(--fm);font-size:.58rem;color:var(--t3);"></span>
+      <button onclick="loadAlertHistory()"
+        style="background:transparent;border:1px solid var(--bd);border-radius:3px;
+               padding:5px 12px;color:var(--t3);font-family:var(--fm);font-size:.6rem;cursor:pointer;">
+        ↻ Refresh
+      </button>
+    </div>
+  </div>
+  <div id="alertHistoryTable" style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="font-family:var(--fm);font-size:.55rem;color:var(--t3);padding:5px 8px;
+                     border-bottom:1px solid var(--bd);text-align:left;letter-spacing:.5px;">TIME</th>
+          <th style="font-family:var(--fm);font-size:.55rem;color:var(--t3);padding:5px 8px;
+                     border-bottom:1px solid var(--bd);text-align:left;letter-spacing:.5px;">LEVEL</th>
+          <th style="font-family:var(--fm);font-size:.55rem;color:var(--t3);padding:5px 8px;
+                     border-bottom:1px solid var(--bd);text-align:left;letter-spacing:.5px;">SIGNAL</th>
+          <th style="font-family:var(--fm);font-size:.55rem;color:var(--t3);padding:5px 8px;
+                     border-bottom:1px solid var(--bd);text-align:left;letter-spacing:.5px;">ZONE</th>
+          <th style="font-family:var(--fm);font-size:.55rem;color:var(--t3);padding:5px 8px;
+                     border-bottom:1px solid var(--bd);text-align:left;letter-spacing:.5px;">MESSAGE</th>
+        </tr>
+      </thead>
+      <tbody id="alertHistoryBody">
+        <tr><td colspan="5" style="text-align:center;padding:20px;font-family:var(--fm);
+            font-size:.62rem;color:var(--t3);">Loading alert history...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ── XAI + DB JAVASCRIPT ────────────────────────────────────── -->
+<script>
+// ── XAI ────────────────────────────────────────────────────────
+const RISK_COLORS = {
+  LOW: '#00e676', MEDIUM: '#ffb300', HIGH: '#ff6f00', EXTREME: '#ff2d55'
+};
+
+async function loadXAI() {
+  const zone = document.getElementById('xaiZoneSelect').value;
+  document.getElementById('xaiLoading').style.display = 'block';
+  document.getElementById('xaiContent').style.display = 'none';
+
+  try {
+    if (zone) {
+      // Single zone
+      const res  = await fetch(`/api/xai/explain?zone=${encodeURIComponent(zone)}`);
+      const data = await res.json();
+      renderSingleXAI(data.explanation);
+      document.getElementById('xaiSingle').style.display = 'block';
+      document.getElementById('xaiAllZones').style.display = 'none';
+    } else {
+      // All zones
+      const res  = await fetch('/api/xai/explain-all');
+      const data = await res.json();
+      renderAllZonesXAI(data.explanations);
+      document.getElementById('xaiSingle').style.display = 'none';
+      document.getElementById('xaiAllZones').style.display = 'block';
+    }
+    document.getElementById('xaiLoading').style.display = 'none';
+    document.getElementById('xaiContent').style.display = 'block';
+  } catch(e) {
+    document.getElementById('xaiLoading').innerHTML =
+      `<p style="color:var(--rd);font-family:var(--fm);font-size:.62rem;">XAI load failed: ${e.message}</p>`;
+  }
+}
+
+function renderSingleXAI(exp) {
+  if (!exp) return;
+
+  // Bar chart
+  const bars = exp.shap_values.slice(0, 8).map(item => {
+    const color = item.direction === 'increases' ? '#ff2d55' : '#00e676';
+    const w = Math.max(4, item.pct);
+    return `
+      <div style="margin-bottom:7px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
+          <span style="font-family:var(--fm);font-size:.57rem;color:var(--t2);">${item.label}</span>
+          <span style="font-family:var(--fm);font-size:.57rem;color:${color};">${item.pct}%</span>
+        </div>
+        <div style="height:5px;background:rgba(0,0,0,.3);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${w}%;background:${color};border-radius:3px;transition:width .5s;"></div>
+        </div>
+        <div style="font-family:var(--fm);font-size:.5rem;color:var(--t3);margin-top:1px;">
+          Value: ${item.value} · ${item.direction} risk
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('xaiBarChart').innerHTML = bars;
+
+  // Summary
+  const rc = RISK_COLORS[exp.risk_label] || '#00d2ff';
+  const conf = exp.confidence ? `${exp.confidence}%` : 'N/A';
+  document.getElementById('xaiSummary').innerHTML = `
+    <div style="margin-bottom:12px;">
+      <span style="font-family:var(--fu);font-weight:700;font-size:1.4rem;color:${rc};">${exp.risk_label}</span>
+      <span style="font-family:var(--fm);font-size:.6rem;color:var(--t3);margin-left:8px;">Confidence: ${conf}</span>
+    </div>
+    <div style="font-family:var(--fm);font-size:.6rem;color:var(--t3);margin-bottom:8px;
+                text-transform:uppercase;letter-spacing:.5px;">Top Driver</div>
+    <div style="font-family:var(--fu);font-weight:600;font-size:.9rem;color:var(--cy);margin-bottom:12px;">
+      ${exp.top_driver_label}
+    </div>
+    <div style="font-family:var(--fm);font-size:.6rem;color:var(--t3);margin-bottom:6px;
+                text-transform:uppercase;letter-spacing:.5px;">Model Reasoning</div>
+    <div style="font-family:var(--fm);font-size:.63rem;color:var(--t2);line-height:1.55;
+                background:var(--sf2);border:1px solid var(--bd);border-radius:4px;padding:10px;">
+      ${exp.explanation_text}
+    </div>
+    ${exp.probabilities && Object.keys(exp.probabilities).length ? `
+    <div style="margin-top:12px;">
+      <div style="font-family:var(--fm);font-size:.57rem;color:var(--t3);
+                  text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Class Probabilities</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${Object.entries(exp.probabilities).map(([lbl, pct]) =>
+          `<span style="font-family:var(--fm);font-size:.58rem;padding:2px 8px;border-radius:3px;
+            background:rgba(0,0,0,.2);color:${RISK_COLORS[lbl]||'var(--t2)'};">${lbl}: ${pct}%</span>`
+        ).join('')}
+      </div>
+    </div>` : ''}
+  `;
+}
+
+function renderAllZonesXAI(explanations) {
+  if (!explanations || !explanations.length) return;
+  const html = explanations.map(exp => {
+    const rc    = RISK_COLORS[exp.risk_label] || '#00d2ff';
+    const top3  = (exp.shap_values || []).slice(0, 3);
+    const bars  = top3.map(item => {
+      const color = item.direction === 'increases' ? '#ff2d55' : '#00e676';
+      return `
+        <div style="margin-bottom:5px;">
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-family:var(--fm);font-size:.52rem;color:var(--t3);">${item.label}</span>
+            <span style="font-family:var(--fm);font-size:.52rem;color:${color};">${item.pct}%</span>
+          </div>
+          <div style="height:3px;background:rgba(0,0,0,.3);border-radius:2px;margin-top:2px;">
+            <div style="height:100%;width:${Math.max(3,item.pct)}%;background:${color};border-radius:2px;"></div>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div style="background:var(--sf);border:1px solid var(--bd);border-radius:4px;
+                  padding:12px;border-top:2px solid ${rc};">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-family:var(--fu);font-weight:700;font-size:.85rem;">${exp.zone_name || 'Zone'}</span>
+          <span style="font-family:var(--fu);font-weight:700;font-size:.75rem;color:${rc};">${exp.risk_label}</span>
+        </div>
+        <div style="font-family:var(--fm);font-size:.54rem;color:var(--t3);margin-bottom:6px;">
+          Top driver: <span style="color:var(--cy);">${exp.top_driver_label}</span>
+        </div>
+        ${bars}
+      </div>`;
+  }).join('');
+  document.getElementById('xaiZoneGrid').innerHTML = html;
+}
+
+// ── DB ALERT HISTORY ───────────────────────────────────────────
+async function loadAlertHistory() {
+  try {
+    const res  = await fetch('/api/db/alerts?limit=30');
+    const data = await res.json();
+
+    // Stats badge
+    const s = data.stats || {};
+    document.getElementById('dbStatsBadge').textContent =
+      `${s.today || 0} today · ${s.red || 0} RED · ${s.amber || 0} AMBER · ${s.total || 0} total`;
+
+    if (!data.alerts || !data.alerts.length) {
+      document.getElementById('alertHistoryBody').innerHTML =
+        `<tr><td colspan="5" style="text-align:center;padding:20px;font-family:var(--fm);
+         font-size:.62rem;color:var(--t3);">No alerts in database yet.</td></tr>`;
+      return;
+    }
+
+    const LC = { RED:'pE', AMBER:'pM', GREEN:'pG', INFO:'pI' };
+    document.getElementById('alertHistoryBody').innerHTML = data.alerts.map(a => `
+      <tr>
+        <td style="font-family:var(--fm);font-size:.58rem;color:var(--t3);
+                   padding:6px 8px;border-bottom:1px solid rgba(0,210,255,.04);">${a.timestamp}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid rgba(0,210,255,.04);">
+          <span class="rp ${LC[a.level]||'pI'}" style="font-size:.55rem;">${a.level}</span>
+        </td>
+        <td style="font-family:var(--fm);font-size:.58rem;color:var(--t3);
+                   padding:6px 8px;border-bottom:1px solid rgba(0,210,255,.04);">${a.signal || '—'}</td>
+        <td style="font-family:var(--fm);font-size:.58rem;color:var(--t2);
+                   padding:6px 8px;border-bottom:1px solid rgba(0,210,255,.04);">${a.zone_name || '—'}</td>
+        <td style="font-family:var(--fm);font-size:.6rem;color:var(--t2);
+                   padding:6px 8px;border-bottom:1px solid rgba(0,210,255,.04);">${a.message}</td>
+      </tr>`).join('');
+  } catch(e) {
+    document.getElementById('alertHistoryBody').innerHTML = `<tr><td colspan="5" style="color:var(--rd);font-family:var(--fm);font-size:.62rem;padding:12px;">Failed to load: ${e.message}</td></tr>`;
+  }
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+window.onload=function(){
+  loadZones();
+  loadXAI();
+  loadAlertHistory();
+};
+</script>
+{% endblock %}

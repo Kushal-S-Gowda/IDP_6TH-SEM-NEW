@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FloodSense Pro — Fire Spread Predictive Model</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #020c1b; --sf: #071525; --sf2: #0c1e33;
+  --bd: rgba(0,210,255,.10); --bdh: rgba(0,210,255,.35);
+  --cy: #00d2ff; --rd: #ff2d55; --am: #ffb300;
+  --gn: #00e676; --vi: #b388ff;
+  --t1: #d6eaf8; --t2: #6a96b5; --t3: #2e5573;
+  --fu: 'Rajdhani', sans-serif; --fm: 'JetBrains Mono', monospace;
+  --fire1: #ff6600; --fire2: #ff2d00; --fire3: #ffaa00;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--t1);
+  font-family: var(--fu);
+  background-image: radial-gradient(rgba(0,210,255,.04) 1px, transparent 1px);
+  background-size: 32px 32px; background-attachment: fixed;
+  min-height: 100vh; overflow-x: hidden;
+}
+
+/* ── NAV ── */
+.nav {
+  position: sticky; top: 0; z-index: 9999; height: 52px;
+  display: flex; align-items: stretch;
+  background: rgba(2,12,27,.97); backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(0,210,255,.10);
+}
+.nb { display: flex; align-items: center; gap: 10px; padding: 0 22px; border-right: 1px solid rgba(0,210,255,.10); text-decoration: none; flex-shrink: 0; }
+.nl { width: 26px; height: 26px; background: var(--cy); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.nn { font-family: var(--fu); font-weight: 700; font-size: 1rem; letter-spacing: 2px; color: var(--t1); text-transform: uppercase; }
+.nn em { color: var(--cy); font-style: normal; }
+/* Primary nav tabs */
+.nt { display: flex; align-items: stretch; list-style: none; flex: 1; }
+.nt > li { position: relative; display: flex; align-items: stretch; }
+.nt > li > a, .nt > li > .ndrop-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 0 18px; font-family: var(--fu); font-weight: 600;
+  font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--t2); text-decoration: none; border-bottom: 2px solid transparent;
+  transition: all .18s; white-space: nowrap; background: none; border-top: none;
+  border-left: none; border-right: none; cursor: pointer;
+}
+.nt > li > a:hover, .nt > li > .ndrop-btn:hover { color: var(--t1); background: rgba(0,210,255,.04); }
+.nt > li > a.active { color: var(--cy); border-bottom-color: var(--cy); }
+.nt > li > a.a-red { color: var(--t2); }
+.nt > li > a.a-red:hover { color: var(--rd); }
+.nt > li > a.a-red.active { color: var(--rd); border-bottom-color: var(--rd); }
+.nt > li > a.a-gn { color: var(--t2); }
+.nt > li > a.a-gn:hover { color: var(--gn); }
+/* Tools dropdown */
+.ndrop-btn { color: var(--t2); }
+.ndrop-btn.active, .ndrop-btn:has(+.ndrop.open) { color: var(--fire1); border-bottom: 2px solid var(--fire1); }
+.ndrop-arrow { font-size: .5rem; opacity: .6; transition: transform .18s; }
+.ndrop-btn.open .ndrop-arrow { transform: rotate(180deg); }
+.ndrop {
+  position: absolute; top: 52px; left: 0; min-width: 200px;
+  background: rgba(7,21,37,.98); border: 1px solid rgba(0,210,255,.15);
+  border-top: 2px solid var(--fire1); border-radius: 0 0 6px 6px;
+  display: none; flex-direction: column; z-index: 9999;
+  box-shadow: 0 12px 40px rgba(0,0,0,.6);
+}
+.ndrop.open { display: flex; }
+.ndrop a {
+  padding: 11px 18px; font-family: var(--fu); font-weight: 600;
+  font-size: .8rem; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--t2); text-decoration: none; display: flex; align-items: center;
+  gap: 10px; border-bottom: 1px solid rgba(0,210,255,.06); transition: all .15s;
+}
+.ndrop a:last-child { border-bottom: none; }
+.ndrop a:hover { color: var(--t1); background: rgba(255,102,0,.07); padding-left: 22px; }
+.ndrop a.active { color: var(--fire1); }
+.ndrop-tag { font-family: var(--fm); font-size: .55rem; color: var(--t3);
+  background: rgba(255,102,0,.12); border: 1px solid rgba(255,102,0,.2);
+  border-radius: 2px; padding: 1px 5px; letter-spacing: .5px; }
+/* Right section */
+.nr { display: flex; align-items: center; gap: 14px; padding: 0 18px; border-left: 1px solid rgba(0,210,255,.10); flex-shrink: 0; }
+.ld { display: flex; align-items: center; gap: 6px; font-family: var(--fm); font-size: .65rem; color: var(--cy); }
+.ld::before { content: ''; width: 5px; height: 5px; background: var(--cy); border-radius: 50%; animation: blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+#clk { font-family: var(--fm); font-size: .68rem; color: var(--t3); }
+
+/* ── PAGE HEADER ── */
+.ph { padding: 20px 40px 14px; border-bottom: 1px solid var(--bd); display: flex; justify-content: space-between; align-items: flex-end; }
+.phe { font-family: var(--fm); font-size: .62rem; color: var(--fire1); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+.phe::before { content: ''; width: 16px; height: 1px; background: var(--fire1); }
+.pht { font-family: var(--fu); font-weight: 700; font-size: 1.6rem; letter-spacing: -.5px; text-transform: uppercase; }
+.phs { font-size: .79rem; color: var(--t2); margin-top: 3px; }
+.model-badge { font-family: var(--fm); font-size: .6rem; color: var(--t3); border: 1px solid var(--bd); border-radius: 3px; padding: 4px 10px; letter-spacing: .5px; }
+
+/* ── MAIN LAYOUT ── */
+.layout { display: grid; grid-template-columns: 280px 1fr 260px; height: calc(100vh - 116px); gap: 1px; background: var(--bd); }
+
+/* ── LEFT PANEL — CONTROLS ── */
+.ctrl-panel { background: var(--sf); overflow-y: auto; padding: 0; }
+.ctrl-section { padding: 16px 18px; border-bottom: 1px solid var(--bd); }
+.cs-title { font-family: var(--fm); font-size: .6rem; color: var(--t3); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.cs-title::before { content: ''; width: 3px; height: 10px; background: var(--fire1); border-radius: 1px; }
+
+/* Scenario selector */
+.scenario-btn {
+  width: 100%; padding: 10px 12px; margin-bottom: 6px;
+  background: var(--sf2); border: 1px solid var(--bd);
+  border-radius: 4px; color: var(--t2);
+  font-family: var(--fu); font-weight: 600; font-size: .82rem;
+  letter-spacing: .5px; text-align: left; cursor: pointer;
+  transition: all .18s; display: flex; align-items: center; gap: 8px;
+}
+.scenario-btn:hover { border-color: var(--bdh); color: var(--t1); background: rgba(0,210,255,.05); }
+.scenario-btn.active { border-color: var(--fire1); color: var(--fire1); background: rgba(255,102,0,.07); }
+.sb-icon { font-size: 1rem; flex-shrink: 0; }
+.sb-info { flex: 1; }
+.sb-name { font-size: .82rem; font-weight: 700; }
+.sb-sub { font-family: var(--fm); font-size: .58rem; color: var(--t3); margin-top: 1px; }
+
+/* Sliders */
+.slider-row { margin-bottom: 14px; }
+.sl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.sl-label { font-family: var(--fm); font-size: .62rem; color: var(--t3); text-transform: uppercase; letter-spacing: .5px; }
+.sl-val { font-family: var(--fm); font-size: .72rem; color: var(--cy); font-weight: 700; }
+input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 3px;
+  background: var(--sf2); border-radius: 2px; outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px;
+  background: var(--fire1); border-radius: 50%; cursor: pointer;
+  border: 2px solid var(--bg); transition: transform .15s;
+}
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+/* Wind compass */
+.compass-wrap { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+.compass { position: relative; width: 56px; height: 56px; flex-shrink: 0; }
+.compass-ring { width: 56px; height: 56px; border-radius: 50%; border: 1px solid var(--bd); background: var(--sf2); display: flex; align-items: center; justify-content: center; position: relative; }
+.compass-dirs { position: absolute; inset: 0; }
+.compass-dirs span { position: absolute; font-family: var(--fm); font-size: .55rem; color: var(--t3); }
+.compass-dirs .N { top: 2px; left: 50%; transform: translateX(-50%); }
+.compass-dirs .S { bottom: 2px; left: 50%; transform: translateX(-50%); }
+.compass-dirs .E { right: 3px; top: 50%; transform: translateY(-50%); }
+.compass-dirs .W { left: 3px; top: 50%; transform: translateY(-50%); }
+.compass-arrow {
+  position: absolute; width: 2px; height: 20px;
+  background: linear-gradient(to top, transparent 0%, var(--fire1) 100%);
+  left: 50%; top: 50%; transform-origin: bottom center;
+  transform: translateX(-50%) translateY(-100%);
+  border-radius: 2px; transition: transform .3s;
+}
+.compass-speed { font-family: var(--fm); }
+.cs-val { font-size: 1.4rem; font-weight: 700; color: var(--fire1); line-height: 1; }
+.cs-unit { font-size: .6rem; color: var(--t3); text-transform: uppercase; letter-spacing: .5px; }
+
+/* Action buttons */
+.btn-fire {
+  width: 100%; padding: 13px; border-radius: 4px; border: none; cursor: pointer;
+  font-family: var(--fu); font-weight: 700; font-size: .9rem;
+  letter-spacing: 1.5px; text-transform: uppercase; transition: all .2s;
+  margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-start { background: linear-gradient(135deg, #ff4400, #ff6600); color: #fff; }
+.btn-start:hover { box-shadow: 0 4px 24px rgba(255,80,0,.5); transform: translateY(-1px); }
+.btn-pause { background: rgba(255,179,0,.12); color: var(--am); border: 1px solid rgba(255,179,0,.3); }
+.btn-pause:hover { background: rgba(255,179,0,.22); }
+.btn-reset { background: transparent; color: var(--t2); border: 1px solid var(--bd); }
+.btn-reset:hover { border-color: var(--bdh); color: var(--t1); }
+
+/* Firebreak tool */
+.tool-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.tool-chip {
+  font-family: var(--fm); font-size: .62rem; padding: 5px 10px;
+  border: 1px solid var(--bd); border-radius: 3px; color: var(--t3);
+  cursor: pointer; transition: all .18s; background: var(--sf2);
+}
+.tool-chip:hover { border-color: var(--bdh); color: var(--t2); }
+.tool-chip.active { border-color: var(--cy); color: var(--cy); background: rgba(0,210,255,.08); }
+.tool-chip.fire-tool.active { border-color: var(--fire1); color: var(--fire1); background: rgba(255,100,0,.08); }
+.tool-chip.break-tool.active { border-color: var(--gn); color: var(--gn); background: rgba(0,230,118,.08); }
+.tool-chip.water-tool.active { border-color: var(--cy); color: var(--cy); background: rgba(0,210,255,.08); }
+
+/* ── CENTER — CANVAS ── */
+.canvas-wrap {
+  background: var(--bg); position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+#fireCanvas {
+  cursor: crosshair;
+  image-rendering: pixelated;
+  max-width: 100%; max-height: 100%;
+}
+.canvas-overlay-title {
+  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+  font-family: var(--fm); font-size: .62rem; color: rgba(255,102,0,.6);
+  letter-spacing: 2px; text-transform: uppercase; pointer-events: none;
+  white-space: nowrap;
+}
+.canvas-overlay-pause {
+  position: absolute; inset: 0; background: rgba(2,12,27,.75);
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column; gap: 10px;
+}
+.canvas-overlay-pause.show { display: flex; }
+.pause-text { font-family: var(--fu); font-weight: 700; font-size: 1.4rem; letter-spacing: 3px; color: var(--am); text-transform: uppercase; }
+.pause-sub { font-family: var(--fm); font-size: .65rem; color: var(--t3); letter-spacing: 1px; }
+.sim-timer {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  font-family: var(--fm); font-size: .7rem; color: var(--t3); letter-spacing: 2px;
+  background: rgba(2,12,27,.8); padding: 4px 14px; border-radius: 3px;
+  border: 1px solid var(--bd); pointer-events: none;
+}
+
+/* Legend */
+.map-legend {
+  position: absolute; bottom: 50px; left: 16px;
+  background: rgba(2,12,27,.9); border: 1px solid var(--bd);
+  border-radius: 4px; padding: 10px 14px;
+}
+.leg-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.leg-item:last-child { margin-bottom: 0; }
+.leg-swatch { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+.leg-label { font-family: var(--fm); font-size: .58rem; color: var(--t2); letter-spacing: .5px; text-transform: uppercase; }
+
+/* Zone labels on canvas */
+.zone-label-overlay {
+  position: absolute; inset: 0; pointer-events: none;
+}
+
+/* ── RIGHT PANEL — STATS ── */
+.stats-panel { background: var(--sf); overflow-y: auto; }
+.stat-section { padding: 16px 18px; border-bottom: 1px solid var(--bd); }
+.ss-title { font-family: var(--fm); font-size: .6rem; color: var(--t3); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.ss-title::before { content: ''; width: 3px; height: 10px; border-radius: 1px; }
+.ss-title.fire-title::before { background: var(--fire1); }
+.ss-title.econ-title::before { background: var(--am); }
+.ss-title.zone-title::before { background: var(--cy); }
+
+/* Big stat */
+.big-stat { text-align: center; padding: 10px 0; }
+.bs-val { font-family: var(--fu); font-weight: 700; font-size: 2.2rem; letter-spacing: -1px; line-height: 1; }
+.bs-label { font-family: var(--fm); font-size: .6rem; color: var(--t3); letter-spacing: .5px; text-transform: uppercase; margin-top: 4px; }
+
+/* Stat row */
+.st-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(0,210,255,.05); }
+.st-row:last-child { border-bottom: none; }
+.st-key { font-family: var(--fm); font-size: .62rem; color: var(--t3); letter-spacing: .3px; }
+.st-val { font-family: var(--fm); font-size: .72rem; color: var(--t2); font-weight: 500; }
+.st-val.fire { color: var(--fire1); }
+.st-val.warn { color: var(--am); }
+.st-val.safe { color: var(--gn); }
+.st-val.crit { color: var(--rd); animation: blink 1s infinite; }
+
+/* Progress bar */
+.prog-wrap { margin-bottom: 8px; }
+.prog-lbl { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.prog-name { font-family: var(--fm); font-size: .6rem; color: var(--t2); }
+.prog-pct { font-family: var(--fm); font-size: .6rem; color: var(--fire1); }
+.prog-track { background: var(--sf2); border-radius: 2px; height: 6px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 2px; transition: width .5s ease; }
+
+/* Economic card */
+.econ-card { background: rgba(255,179,0,.05); border: 1px solid rgba(255,179,0,.15); border-radius: 4px; padding: 12px 14px; margin-bottom: 8px; }
+.ec-label { font-family: var(--fm); font-size: .58rem; color: var(--t3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.ec-val { font-family: var(--fu); font-weight: 700; font-size: 1.3rem; color: var(--am); letter-spacing: -.5px; }
+.ec-sub { font-family: var(--fm); font-size: .6rem; color: var(--t3); margin-top: 2px; }
+
+/* Alert box */
+.alert-box { background: rgba(255,45,85,.07); border: 1px solid rgba(255,45,85,.2); border-radius: 4px; padding: 10px 12px; margin-bottom: 6px; font-family: var(--fm); font-size: .65rem; color: var(--rd); line-height: 1.5; }
+.alert-box.warn { background: rgba(255,179,0,.07); border-color: rgba(255,179,0,.2); color: var(--am); }
+.alert-box.safe { background: rgba(0,230,118,.07); border-color: rgba(0,230,118,.2); color: var(--gn); }
+
+/* Spread chart canvas */
+#spreadChart { width: 100%; height: 100px; }
+
+
+/* ── TIME COMPRESSION BANNER ── */
+.tc-banner {
+  position: absolute; bottom: 50px; right: 16px;
+  background: rgba(2,12,27,.92); border: 1px solid rgba(255,102,0,.25);
+  border-left: 3px solid var(--fire1);
+  border-radius: 4px; padding: 8px 14px;
+  font-family: var(--fm); font-size: .6rem; color: var(--t3);
+  letter-spacing: .4px; line-height: 1.7; pointer-events: none;
+  min-width: 200px;
+}
+.tc-banner .tc-val { color: var(--fire1); font-weight: 700; font-size: .68rem; }
+.tc-banner .tc-title { color: var(--am); text-transform: uppercase; letter-spacing: 1px; font-size: .58rem; margin-bottom: 3px; }
+
+/* ── WHAT THIS DEMONSTRATES ── */
+.wtd-panel {
+  padding: 14px 18px; border-bottom: 1px solid var(--bd);
+  background: rgba(255,102,0,.03);
+}
+.wtd-title {
+  font-family: var(--fm); font-size: .58rem; color: var(--fire1);
+  letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.wtd-title::before { content: ''; width: 3px; height: 10px; background: var(--fire1); border-radius: 1px; }
+.wtd-body { font-family: var(--fm); font-size: .62rem; color: var(--t2); line-height: 1.75; }
+.wtd-tag { display: inline-block; font-size: .55rem; padding: 2px 7px; border-radius: 2px; margin: 2px 2px 0 0;
+  background: rgba(255,102,0,.1); border: 1px solid rgba(255,102,0,.2); color: var(--fire1); letter-spacing: .5px; }
+.wtd-tag.cy { background: rgba(0,210,255,.08); border-color: rgba(0,210,255,.2); color: var(--cy); }
+.wtd-tag.gn { background: rgba(0,230,118,.08); border-color: rgba(0,230,118,.2); color: var(--gn); }
+.wtd-tag.am { background: rgba(255,179,0,.08); border-color: rgba(255,179,0,.2); color: var(--am); }
+
+/* ── SEND TO EARLY WARNING BUTTON ── */
+.btn-ew {
+  width: 100%; padding: 11px; border-radius: 4px; border: none; cursor: pointer;
+  font-family: var(--fu); font-weight: 700; font-size: .82rem;
+  letter-spacing: 1.2px; text-transform: uppercase; transition: all .2s;
+  margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: rgba(0,210,255,.08); color: var(--cy); border: 1px solid rgba(0,210,255,.25);
+}
+.btn-ew:hover { background: rgba(0,210,255,.16); border-color: var(--cy); box-shadow: 0 0 16px rgba(0,210,255,.15); }
+.btn-ew:disabled { opacity: .35; cursor: not-allowed; }
+.ew-sent-toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  background: rgba(0,230,118,.12); border: 1px solid var(--gn);
+  border-radius: 4px; padding: 12px 20px;
+  font-family: var(--fm); font-size: .7rem; color: var(--gn); letter-spacing: .5px;
+  display: none; animation: slideUp .3s ease;
+}
+.ew-sent-toast.show { display: block; }
+@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+/* Pulse ring on active fire origin */
+@keyframes fire-pulse { 0%{opacity:.8;transform:scale(1)} 100%{opacity:0;transform:scale(2.5)} }
+</style>
+</head>
+<!-- NAV -->
+<nav class="nav">
+  <a href="/" class="nb"><div class="nl">🌊</div><div class="nn">FLOOD<em>SENSE</em> PRO</div></a>
+  <ul class="nt">
+    <li><a href="/">Home</a></li>
+    <li><a href="/alert-center" class="a-red">🚨 Alert Center</a></li>
+    <li><a href="/citizen">Citizen</a></li>
+    <li><a href="/authority" class="a-red">Authority</a></li>
+    <li><a href="/rescue" class="a-gn">Rescue</a></li>
+    <li>
+      <button class="ndrop-btn active" onclick="toggleDrop(this)">
+        Simulations <span class="ndrop-arrow">▼</span>
+      </button>
+      <div class="ndrop" id="simDrop">
+        <a href="/simulation">🌊 Flood Simulation <span class="ndrop-tag">PHYSICS</span></a>
+        <a href="/fire-simulation" class="active">🔥 Fire Spread Sim <span class="ndrop-tag">PHYSICS MODEL</span></a>
+      </div>
+    </li>
+    <li><a href="/trends">Trends</a></li>
+    <li><a href="/map" target="_blank">Live Map</a></li>
+  </ul>
+  <div class="nr"><div class="ld">SIM ENGINE</div><div id="clk">--:--:--</div></div>
+</nav>
+
+<!-- HEADER -->
+<div class="ph">
+  <div>
+    <div class="phe">Rothermel Spread Model · Cellular Automaton · Bengaluru Urban Grid · Theme 11 — Disaster &amp; Climate Resilience</div>
+    <div class="pht">Fire Spread <span style="color:var(--fire1)">Predictive Model</span></div>
+    <div class="phs">Rothermel-style spread · Live wind/humidity from OWM · Firebreak &amp; water-drop tools</div>
+  </div>
+  <div class="model-badge">ROTHERMEL CA · FARSITE-ADAPTED · CELL: 200m × 200m · GRID: 60×60 · REF: NFPA 921</div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- ── LEFT: CONTROLS ── -->
+  <div class="ctrl-panel">
+
+    <!-- What This Demonstrates -->
+    <div class="wtd-panel">
+      <div class="wtd-title">What This Demonstrates</div>
+      <div class="wtd-body">
+        This predictive model simulates probabilistic urban fire spread using real meteorological inputs — wind direction/speed, fuel moisture, and humidity — via the <b>Rothermel surface fire model</b> (adapted FARSITE methodology, NFPA 921 reference).<br><br>
+        <b>Purpose:</b> Wind-driven fire spread on a Bengaluru grid — spread rate changes when you move wind, humidity, or fuel moisture sliders. Use firebreak/water tools to test interventions.<br><br>
+        <div style="margin-top:6px">
+          <span class="wtd-tag">Theme 11</span>
+          <span class="wtd-tag cy">Early Warning</span>
+          <span class="wtd-tag gn">Micro-level Forecast</span>
+          <span class="wtd-tag am">Disaster Resilience</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenarios -->
+    <div class="ctrl-section">
+      <div class="cs-title">Fire Scenarios</div>
+      <button class="scenario-btn active" data-scenario="0" onclick="selectScenario(0)">
+        <span class="sb-icon">🏭</span>
+        <div class="sb-info">
+          <div class="sb-name">Industrial Zone Fire</div>
+          <div class="sb-sub">Electronic City · High fuel load</div>
+        </div>
+      </button>
+      <button class="scenario-btn" data-scenario="1" onclick="selectScenario(1)">
+        <span class="sb-icon">🏘️</span>
+        <div class="sb-info">
+          <div class="sb-name">Slum Density Fire</div>
+          <div class="sb-sub">Dharavi-type · Rapid spread</div>
+        </div>
+      </button>
+      <button class="scenario-btn" data-scenario="2" onclick="selectScenario(2)">
+        <span class="sb-icon">🌲</span>
+        <div class="sb-info">
+          <div class="sb-name">Peripheral Forest Fire</div>
+          <div class="sb-sub">Bannerghatta · Wind driven</div>
+        </div>
+      </button>
+      <button class="scenario-btn" data-scenario="3" onclick="selectScenario(3)">
+        <span class="sb-icon">⚗️</span>
+        <div class="sb-info">
+          <div class="sb-name">Chemical Plant Explosion</div>
+          <div class="sb-sub">Whitefield · BLEVE event</div>
+        </div>
+      </button>
+      <button class="scenario-btn" data-scenario="4" onclick="selectScenario(4)">
+        <span class="sb-icon">🛢️</span>
+        <div class="sb-info">
+          <div class="sb-name">Fuel Depot Ignition</div>
+          <div class="sb-sub">Hebbal · Multi-point start</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Wind -->
+    <div class="ctrl-section">
+      <div class="cs-title">Wind Conditions</div>
+      <div class="compass-wrap">
+        <div class="compass">
+          <div class="compass-ring">
+            <div class="compass-dirs">
+              <span class="N">N</span><span class="S">S</span>
+              <span class="E">E</span><span class="W">W</span>
+            </div>
+            <div class="compass-arrow" id="windArrow"></div>
+          </div>
+        </div>
+        <div class="compass-speed">
+          <div class="cs-val" id="windSpeedVal">24</div>
+          <div class="cs-unit">km/h</div>
+          <div style="margin-top:4px;font-family:var(--fm);font-size:.6rem;color:var(--t3)" id="windDirLabel">NE — 45°</div>
+        </div>
+      </div>
+      <div class="slider-row" style="margin-top:12px;">
+        <div class="sl-header"><span class="sl-label">Direction (°)</span><span class="sl-val" id="wdv">45°</span></div>
+        <input type="range" id="windDir" min="0" max="359" value="45" oninput="updateWind()">
+      </div>
+      <div class="slider-row">
+        <div class="sl-header"><span class="sl-label">Speed</span><span class="sl-val" id="wsv">24 km/h</span></div>
+        <input type="range" id="windSpeed" min="0" max="80" value="24" oninput="updateWind()">
+      </div>
+    </div>
+
+    <!-- Environment -->
+    <div class="ctrl-section">
+      <div class="cs-title">Environment Parameters</div>
+      <div class="slider-row">
+        <div class="sl-header"><span class="sl-label">Humidity (%)</span><span class="sl-val" id="humv">35%</span></div>
+        <input type="range" id="humidity" min="10" max="90" value="35" oninput="this.nextElementSibling&&updateParams()">
+      </div>
+      <div class="slider-row">
+        <div class="sl-header"><span class="sl-label">Fuel Moisture (%)</span><span class="sl-val" id="fmv">12%</span></div>
+        <input type="range" id="fuelMoisture" min="5" max="40" value="12" oninput="updateParams()">
+      </div>
+      <div class="slider-row">
+        <div class="sl-header"><span class="sl-label">Sim Speed</span><span class="sl-val" id="ssv">1× real</span></div>
+        <input type="range" id="simSpeed" min="1" max="10" value="3" oninput="updateParams()">
+      </div>
+    </div>
+
+    <!-- Tools -->
+    <div class="ctrl-section">
+      <div class="cs-title">Intervention Tools</div>
+      <div class="tool-chips">
+        <div class="tool-chip fire-tool active" id="tool-ignite" onclick="setTool('ignite')">🔥 Place Fire</div>
+        <div class="tool-chip break-tool" id="tool-firebreak" onclick="setTool('firebreak')">🌿 Firebreak</div>
+        <div class="tool-chip water-tool" id="tool-water" onclick="setTool('water')">💧 Water Drop</div>
+        <div class="tool-chip" id="tool-inspect" onclick="setTool('inspect')">🔍 Inspect</div>
+      </div>
+      <div style="margin-top:10px;font-family:var(--fm);font-size:.6rem;color:var(--t3);line-height:1.6" id="toolHint">
+        Click on map to place fire ignition point
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="ctrl-section">
+      <button class="btn-fire btn-start" id="btnStart" onclick="startSim()">▶ &nbsp;START SIMULATION</button>
+      <button class="btn-fire btn-pause" id="btnPause" onclick="pauseSim()" style="display:none">⏸ &nbsp;PAUSE</button>
+      <button class="btn-fire btn-reset" onclick="resetSim()">↺ &nbsp;RESET</button>
+      <button class="btn-ew" id="btnSendEW" onclick="sendToEarlyWarning()" disabled>
+        📡 &nbsp;SEND ALERT TO EARLY WARNING
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- ── CENTER: CANVAS ── -->
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="fireCanvas"></canvas>
+    <div class="canvas-overlay-title">BENGALURU URBAN GRID · 12km × 12km · CELL SIZE 200m</div>
+    <div class="canvas-overlay-pause" id="pauseOverlay">
+      <div class="pause-text">⏸ PAUSED</div>
+      <div class="pause-sub">CLICK RESUME TO CONTINUE SIMULATION</div>
+    </div>
+    <div class="sim-timer" id="simTimer">T+00:00:00 · STEP 0 / 0</div>
+    <div class="tc-banner" id="tcBanner">
+      <div class="tc-title">⏱ Time Compression Active</div>
+      <div><span class="tc-val" id="tcRate">1 sec ≈ 6 real min</span></div>
+      <div style="margin-top:2px">Each grid step = <span class="tc-val" id="tcStep">6</span> simulated minutes</div>
+      <div style="margin-top:2px">Based on NFPA 921 urban spread rates</div>
+    </div>
+    <div class="map-legend">
+      <div class="leg-item"><div class="leg-swatch" style="background:#1a3a1a"></div><span class="leg-label">Unburned</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#ff8800"></div><span class="leg-label">Active Fire</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#ff2200"></div><span class="leg-label">Intense Fire</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#440000"></div><span class="leg-label">Burned Out</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#006600"></div><span class="leg-label">Firebreak</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#0066ff"></div><span class="leg-label">Water Drop</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#334455"></div><span class="leg-label">Road / Barrier</span></div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: STATS ── -->
+  <div class="stats-panel">
+
+    <div class="stat-section">
+      <div class="ss-title fire-title">Fire Status</div>
+      <div class="big-stat">
+        <div class="bs-val" id="burnedCells" style="color:var(--fire1)">0</div>
+        <div class="bs-label">Cells on Fire / Burned</div>
+      </div>
+      <div class="st-row"><span class="st-key">Active Cells</span><span class="st-val fire" id="sActiveCells">0</span></div>
+      <div class="st-row"><span class="st-key">Burned Out</span><span class="st-val" id="sBurnedOut">0</span></div>
+      <div class="st-row"><span class="st-key">Area Burned</span><span class="st-val warn" id="sAreaBurned">0 km²</span></div>
+      <div class="st-row"><span class="st-key">Spread Rate</span><span class="st-val fire" id="sSpreadRate">0 m/min</span></div>
+      <div class="st-row"><span class="st-key">Est. Containment</span><span class="st-val" id="sContainment">—</span></div>
+      <div class="st-row"><span class="st-key">Sim Time Elapsed</span><span class="st-val" id="sSimTime">0 min</span></div>
+    </div>
+
+    <div class="stat-section">
+      <div class="ss-title fire-title">Fire Weather (sliders)</div>
+      <div class="st-row"><span class="st-key">Wind speed</span><span class="st-val fire" id="fwWind">— km/h</span></div>
+      <div class="st-row"><span class="st-key">Wind direction</span><span class="st-val" id="fwDir">—°</span></div>
+      <div class="st-row"><span class="st-key">Humidity</span><span class="st-val" id="fwHum">—%</span></div>
+      <div class="st-row"><span class="st-key">Fuel moisture</span><span class="st-val warn" id="fwFuel">—%</span></div>
+      <div class="st-row"><span class="st-key">Spread multiplier</span><span class="st-val" id="fwSpread">—</span></div>
+    </div>
+
+    <div class="stat-section">
+      <div class="ss-title zone-title">Zone Risk Status</div>
+      <div id="zoneRisks"></div>
+    </div>
+
+    <div class="stat-section">
+      <div class="ss-title fire-title">Spread Progression</div>
+      <canvas id="spreadChart"></canvas>
+    </div>
+
+    <div class="stat-section">
+      <div class="ss-title" style="color:var(--t3)">Active Alerts</div>
+      <div id="alertsBox">
+        <div class="alert-box safe">System ready. Select scenario and start simulation.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="ew-sent-toast" id="ewSentToast">✅ Scenario alert sent to Early Warning Command</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  FIRE SPREAD SIMULATION ENGINE
+//  Modified Rothermel Cellular Automaton
+//  Grid: 60×60 cells · Cell size: 200m × 200m
+// ═══════════════════════════════════════════════════════
+
+const GRID_W = 60, GRID_H = 60;
+const CELL_SIZE_M = 200;    // each cell = 200m × 200m = 0.04 km²
+const CELL_AREA_KM2 = 0.04;
+
+// Cell states
+const EMPTY = 0, FUEL = 1, IGNITING = 2, BURNING = 3, INTENSE = 4, BURNED = 5, FIREBREAK = 6, WATER = 7, ROAD = 8;
+
+// Land types (fuel loads)
+const LAND = { RESIDENTIAL: 0, INDUSTRIAL: 1, FOREST: 2, SLUM: 3, ROAD: 4, WATER_BODY: 5, COMMERCIAL: 6, PARK: 7 };
+const FUEL_LOAD   = [1.2, 1.8, 2.5, 2.2, 0.0, 0.0, 1.0, 1.5]; // relative
+const LAND_COLORS = ['#1e2d1e','#1a1f2e','#142814','#2a1a0e','#1a1a2a','#0a1f2a','#1e1e2a','#0f2a0f'];
+// Fuel load index per land type (spread sensitivity)
+const FUEL_LOAD_IDX = [1.0, 1.1, 1.3, 0.9, 0.2, 0, 1.4, 0.7];
+
+// ── SCENARIOS ──────────────────────────────────────────
+const SCENARIOS = [
+  { name: 'Industrial Zone Fire', zone: 'Electronic City',
+    ignition: [{x:42,y:44},{x:43,y:44}],
+    windDir: 225, windSpeed: 28, humidity: 30, fuelMoisture: 10 },
+  { name: 'Slum Density Fire', zone: 'High Density Area',
+    ignition: [{x:28,y:28}],
+    windDir: 45, windSpeed: 18, humidity: 45, fuelMoisture: 14 },
+  { name: 'Peripheral Forest Fire', zone: 'Bannerghatta',
+    ignition: [{x:35,y:50},{x:36,y:50},{x:35,y:51}],
+    windDir: 315, windSpeed: 42, humidity: 20, fuelMoisture: 8 },
+  { name: 'Chemical Plant Explosion', zone: 'Whitefield',
+    ignition: [{x:46,y:22},{x:47,y:22},{x:46,y:23},{x:47,y:23}],
+    windDir: 180, windSpeed: 15, humidity: 55, fuelMoisture: 18 },
+  { name: 'Fuel Depot Ignition', zone: 'Hebbal',
+    ignition: [{x:22,y:12},{x:23,y:12},{x:38,y:18}],
+    windDir: 90, windSpeed: 35, humidity: 25, fuelMoisture: 9 },
+];
+
+// ── STATE ──────────────────────────────────────────────
+let grid = [], landGrid = [], burnTime = [], fuelLeft = [];
+let simRunning = false, simPaused = false, animFrame = null;
+let step = 0, simMinutes = 0;
+let currentTool = 'ignite', currentScenario = 0;
+let windDir = 45, windSpeed = 24, humidity = 35, fuelMoisture = 12;
+let spreadHistory = [];
+let lastStepTime = 0;
+let simSpeedMultiplier = 3;
+
+// Spread chart
+let spreadCtx = null;
+
+// Canvas
+let canvas, ctx, cellW, cellH;
+
+// ── INIT ───────────────────────────────────────────────
+function initGrid() {
+  grid = []; landGrid = []; burnTime = []; fuelLeft = [];
+  for (let y = 0; y < GRID_H; y++) {
+    grid[y] = []; landGrid[y] = []; burnTime[y] = []; fuelLeft[y] = [];
+    for (let x = 0; x < GRID_W; x++) {
+      const lt = getLandType(x, y);
+      landGrid[y][x] = lt;
+      fuelLeft[y][x] = FUEL_LOAD[lt];
+      burnTime[y][x] = 0;
+      grid[y][x] = (lt === LAND.ROAD || lt === LAND.WATER_BODY) ? ROAD : FUEL;
+    }
+  }
+}
+
+function getLandType(x, y) {
+  // Major roads (act as firebreaks)
+  if ((x === 20 || x === 40) && y > 5 && y < 55) return LAND.ROAD;
+  if ((y === 20 || y === 40) && x > 5 && x < 55) return LAND.ROAD;
+  // Water bodies
+  if (x > 26 && x < 34 && y > 26 && y < 34) return LAND.WATER_BODY; // central lake
+  if (x > 10 && x < 16 && y > 42 && y < 48) return LAND.WATER_BODY;
+  if (x > 44 && x < 52 && y > 8 && y < 14) return LAND.WATER_BODY;
+  // Industrial zones
+  if (x > 38 && x < 55 && y > 38 && y < 55) return LAND.INDUSTRIAL;
+  if (x > 42 && x < 54 && y > 14 && y < 26) return LAND.INDUSTRIAL;
+  // Forest / periphery
+  if (y > 50 || x < 8 || x > 52) return LAND.FOREST;
+  if (x > 30 && x < 42 && y > 48 && y < 58) return LAND.FOREST;
+  // Slum / dense
+  if (x > 22 && x < 32 && y > 22 && y < 32) return LAND.SLUM;
+  if (x > 8 && x < 18 && y > 30 && y < 42) return LAND.SLUM;
+  // Parks
+  if (x > 14 && x < 22 && y > 12 && y < 20) return LAND.PARK;
+  if (x > 36 && x < 44 && y > 30 && y < 38) return LAND.PARK;
+  // Commercial
+  if (x > 20 && x < 40 && y > 8 && y < 20) return LAND.COMMERCIAL;
+  // Default residential
+  return LAND.RESIDENTIAL;
+}
+
+// ── SPREAD PHYSICS ─────────────────────────────────────
+// Modified Rothermel model:
+// P_ignition = base × fuel_load × wind_factor × moisture_factor × distance_factor
+
+function windFactor(fromX, fromY, toX, toY) {
+  if (windSpeed === 0) return 1.0;
+  const dx = toX - fromX, dy = toY - fromY;
+  const angle = Math.atan2(dy, dx) * 180 / Math.PI; // degrees
+  const windRad = windDir * Math.PI / 180;
+  const spreadAngle = Math.atan2(dy, dx);
+  const alignment = Math.cos(spreadAngle - windRad);
+  // Wind multiplier: upwind 0.3×, crosswind 1×, downwind up to 3.5×
+  const wfactor = 1.0 + (windSpeed / 80) * 2.5 * Math.max(0, alignment);
+  return Math.max(0.25, wfactor);
+}
+
+function moistureFactor() {
+  // Higher moisture = harder to ignite
+  return Math.max(0.1, 1.0 - fuelMoisture / 60);
+}
+
+function humidityFactor() {
+  return Math.max(0.2, 1.0 - humidity / 120);
+}
+
+function stepSimulation() {
+  const nextGrid = grid.map(row => [...row]);
+  let newIgnitions = 0;
+  const mf = moistureFactor() * humidityFactor();
+
+  for (let y = 0; y < GRID_H; y++) {
+    for (let x = 0; x < GRID_W; x++) {
+      const state = grid[y][x];
+
+      // Burning/Intense → can spread
+      if (state === BURNING || state === INTENSE) {
+        burnTime[y][x]++;
+        const maxBurn = Math.ceil(FUEL_LOAD[landGrid[y][x]] * 8 / mf);
+
+        // Advance fire intensity
+        if (burnTime[y][x] === 3 && state === BURNING) {
+          nextGrid[y][x] = INTENSE;
+        }
+        // Burn out
+        if (burnTime[y][x] >= maxBurn) {
+          nextGrid[y][x] = BURNED;
+          fuelLeft[y][x] = 0;
+          continue;
+        }
+
+        // Try to spread to neighbours (Moore neighbourhood = 8 dirs)
+        const neighbours = [];
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || nx >= GRID_W || ny < 0 || ny >= GRID_H) continue;
+            if (grid[ny][nx] === FUEL) neighbours.push({nx, ny, dx, dy});
+          }
+        }
+
+        for (const {nx, ny, dx, dy} of neighbours) {
+          const fl = FUEL_LOAD[landGrid[ny][nx]];
+          if (fl === 0) continue; // road/water never ignites
+
+          const wf = windFactor(x, y, nx, ny);
+          const diagonal = (dx !== 0 && dy !== 0) ? 0.7 : 1.0; // diagonal spread slightly less likely
+          const baseProbPerStep = 0.05; // Balanced at 5% chance per step
+          const p = baseProbPerStep * fl * wf * mf * diagonal;
+
+          if (Math.random() < p) {
+            nextGrid[ny][nx] = BURNING;
+            burnTime[ny][nx] = 0;
+            newIgnitions++;
+          }
+        }
+      }
+
+      // Fuel with no fire around stays fuel
+      // IGNITING (pre-flash) → BURNING next step
+      if (state === IGNITING) {
+        nextGrid[y][x] = BURNING;
+        burnTime[y][x] = 0;
+      }
+    }
+  }
+
+  grid = nextGrid;
+  step++;
+  simMinutes = step * (simSpeedMultiplier * 2); // each step = 2-20 min depending on speed
+  return newIgnitions;
+}
+
+// ── RENDER ─────────────────────────────────────────────
+function render() {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  for (let y = 0; y < GRID_H; y++) {
+    for (let x = 0; x < GRID_W; x++) {
+      const state = grid[y][x];
+      const lt = landGrid[y][x];
+      let color;
+
+      if (state === FUEL || state === EMPTY) {
+        color = LAND_COLORS[lt];
+      } else if (state === IGNITING) {
+        color = '#ff6600';
+      } else if (state === BURNING) {
+        // Flickering effect
+        const flicker = Math.random() > 0.5;
+        color = flicker ? '#ff8800' : '#ff5500';
+      } else if (state === INTENSE) {
+        const flicker = Math.random() > 0.5;
+        color = flicker ? '#ff2200' : '#ff4400';
+      } else if (state === BURNED) {
+        color = '#2a0a00';
+      } else if (state === FIREBREAK) {
+        color = '#006600';
+      } else if (state === WATER) {
+        color = '#0044cc';
+      } else if (state === ROAD) {
+        color = lt === LAND.WATER_BODY ? '#0a1f2a' : '#1a1a2a';
+      } else {
+        color = LAND_COLORS[lt] || '#1a2a1a';
+      }
+
+      ctx.fillStyle = color;
+      ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+
+      // Cell borders (subtle)
+      if (cellW > 6) {
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(x * cellW, y * cellH, cellW, cellH);
+      }
+    }
+  }
+
+  // Glow effect on intense cells
+  for (let y = 0; y < GRID_H; y++) {
+    for (let x = 0; x < GRID_W; x++) {
+      if (grid[y][x] === INTENSE) {
+        const cx2 = x * cellW + cellW / 2;
+        const cy2 = y * cellH + cellH / 2;
+        const grd = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, cellW * 1.8);
+        grd.addColorStop(0, 'rgba(255,100,0,0.35)');
+        grd.addColorStop(1, 'rgba(255,100,0,0)');
+        ctx.fillStyle = grd;
+        ctx.fillRect((x-1)*cellW, (y-1)*cellH, cellW*3, cellH*3);
+      }
+    }
+  }
+
+  // Zone labels
+  drawZoneLabels();
+
+  // Wind arrow overlay
+  drawWindIndicator();
+}
+
+const ZONE_LABELS = [
+  {label:'Electronic City', x:46, y:46, color:'rgba(255,100,0,.8)'},
+  {label:'Whitefield', x:46, y:20, color:'rgba(255,200,0,.8)'},
+  {label:'Koramangala', x:30, y:34, color:'rgba(0,210,255,.6)'},
+  {label:'Hebbal', x:22, y:12, color:'rgba(0,210,255,.6)'},
+  {label:'Bannerghatta', x:34, y:52, color:'rgba(0,200,100,.7)'},
+  {label:'Marathahalli', x:42, y:30, color:'rgba(0,210,255,.6)'},
+  {label:'HSR Layout', x:30, y:44, color:'rgba(0,210,255,.6)'},
+];
+
+function drawZoneLabels() {
+  ctx.save();
+  ctx.font = `bold ${Math.max(7, cellW * 0.55)}px 'JetBrains Mono'`;
+  ctx.textAlign = 'center';
+  for (const z of ZONE_LABELS) {
+    const px = z.x * cellW + cellW/2;
+    const py = z.y * cellH;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillText(z.label, px+1, py+1);
+    ctx.fillStyle = z.color;
+    ctx.fillText(z.label, px, py);
+  }
+  ctx.restore();
+}
+
+function drawWindIndicator() {
+  const px = canvas.width - 50, py = 50;
+  const r = 28;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(px, py, r, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(2,12,27,0.85)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,102,0,0.4)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Arrow
+  const rad = (windDir - 90) * Math.PI / 180;
+  const ax = px + Math.cos(rad) * (r - 8);
+  const ay = py + Math.sin(rad) * (r - 8);
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  ctx.lineTo(ax, ay);
+  ctx.strokeStyle = '#ff6600';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(ax, ay, 3, 0, Math.PI*2);
+  ctx.fillStyle = '#ff6600';
+  ctx.fill();
+
+  ctx.font = 'bold 7px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,102,0,0.7)';
+  ctx.fillText(`${windSpeed}km/h`, px, py + r + 10);
+  ctx.restore();
+}
+
+// ── STATS UPDATE ────────────────────────────────────────
+function updateStats() {
+  let active = 0, burned = 0, fuel = 0;
+
+  for (let y = 0; y < GRID_H; y++) {
+    for (let x = 0; x < GRID_W; x++) {
+      const s = grid[y][x];
+      if (s === BURNING || s === INTENSE || s === IGNITING) active++;
+      if (s === BURNED) burned++;
+      if (s === FUEL) fuel++;
+    }
+  }
+
+  const totalBurned = active + burned;
+  const areaBurned = (burned * CELL_AREA_KM2).toFixed(2);
+  const spreadRate = step > 0 ? Math.round(active * 12 / Math.max(1, step)) : 0;
+
+  document.getElementById('burnedCells').textContent = totalBurned;
+  document.getElementById('sActiveCells').textContent = active;
+  document.getElementById('sBurnedOut').textContent = burned;
+  document.getElementById('sAreaBurned').textContent = areaBurned + ' km²';
+  document.getElementById('sSpreadRate').textContent = spreadRate + ' m/min';
+  document.getElementById('sSimTime').textContent = simMinutes + ' min';
+
+  const hrs = Math.floor(simMinutes / 60);
+  const mins = simMinutes % 60;
+  const secs = (step * 2) % 60;
+  document.getElementById('simTimer').textContent =
+    `T+${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')} · STEP ${step}`;
+
+  // Containment estimate
+  if (active === 0 && burned > 0) {
+    document.getElementById('sContainment').textContent = '100%';
+    document.getElementById('sContainment').className = 'st-val safe';
+  } else if (active > 0) {
+    const pct = Math.min(99, Math.round((burned / Math.max(1, totalBurned)) * 100));
+    document.getElementById('sContainment').textContent = pct + '%';
+    document.getElementById('sContainment').className = 'st-val' + (pct < 30 ? ' crit' : pct < 70 ? ' warn' : '');
+  }
+
+  const spreadMult = Math.max(0.2, (windSpeed/30) * (1 - humidity/100) * (1.2 - fuelMoisture/40));
+  const g = id => document.getElementById(id);
+  if (g('fwWind')) g('fwWind').textContent = windSpeed + ' km/h';
+  if (g('fwDir')) g('fwDir').textContent = windDir + '°';
+  if (g('fwHum')) g('fwHum').textContent = humidity + '%';
+  if (g('fwFuel')) g('fwFuel').textContent = fuelMoisture + '%';
+  if (g('fwSpread')) g('fwSpread').textContent = spreadMult.toFixed(2) + '×';
+
+  // Zone risks
+  updateZoneRisks();
+
+  // Spread history for chart
+  if (step % 5 === 0) {
+    spreadHistory.push({ step, active, burned });
+    if (spreadHistory.length > 30) spreadHistory.shift();
+    drawSpreadChart();
+  }
+
+  // Alerts
+  updateAlerts(active, burned, areaBurned);
+}
+
+function updateZoneRisks() {
+  // Check if any zone is threatened
+  const zones = [
+    {name:'Electronic City', cx:46, cy:46, r:5},
+    {name:'Whitefield',      cx:46, cy:20, r:5},
+    {name:'Koramangala',     cx:30, cy:34, r:4},
+    {name:'Hebbal',          cx:22, cy:12, r:4},
+    {name:'Bannerghatta',    cx:34, cy:52, r:4},
+  ];
+  let html = '';
+  for (const z of zones) {
+    let fireNearby = 0;
+    for (let dy = -z.r; dy <= z.r; dy++) {
+      for (let dx = -z.r; dx <= z.r; dx++) {
+        const nx = z.cx + dx, ny = z.cy + dy;
+        if (nx < 0 || nx >= GRID_W || ny < 0 || ny >= GRID_H) continue;
+        const s = grid[ny][nx];
+        if (s === BURNING || s === INTENSE) fireNearby++;
+      }
+    }
+    const status = fireNearby > 10 ? ['BURNING','st-val crit'] :
+                   fireNearby > 3  ? ['THREATENED','st-val warn'] :
+                   fireNearby > 0  ? ['AT RISK','st-val fire'] :
+                                     ['SAFE','st-val safe'];
+    html += `<div class="st-row"><span class="st-key">${z.name}</span><span class="${status[1]}">${status[0]}</span></div>`;
+  }
+  document.getElementById('zoneRisks').innerHTML = html;
+}
+
+function drawSpreadChart() {
+  if (!spreadCtx) {
+    spreadCtx = document.getElementById('spreadChart').getContext('2d');
+  }
+  const c = spreadCtx;
+  const w = c.canvas.width = c.canvas.offsetWidth;
+  const h = c.canvas.height = 100;
+  c.clearRect(0, 0, w, h);
+  if (spreadHistory.length < 2) return;
+
+  const maxVal = Math.max(...spreadHistory.map(d => d.active + d.burned), 10);
+  const pad = { l: 4, r: 4, t: 6, b: 6 };
+
+  // Active area
+  c.beginPath();
+  spreadHistory.forEach((d, i) => {
+    const x = pad.l + (i / (spreadHistory.length - 1)) * (w - pad.l - pad.r);
+    const y = pad.t + (1 - (d.active + d.burned) / maxVal) * (h - pad.t - pad.b);
+    i === 0 ? c.moveTo(x, y) : c.lineTo(x, y);
+  });
+  c.lineTo(w - pad.r, h - pad.b);
+  c.lineTo(pad.l, h - pad.b);
+  c.closePath();
+  const grad = c.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'rgba(255,80,0,0.5)');
+  grad.addColorStop(1, 'rgba(255,80,0,0.05)');
+  c.fillStyle = grad;
+  c.fill();
+
+  // Active line
+  c.beginPath();
+  spreadHistory.forEach((d, i) => {
+    const x = pad.l + (i / (spreadHistory.length - 1)) * (w - pad.l - pad.r);
+    const y = pad.t + (1 - d.active / maxVal) * (h - pad.t - pad.b);
+    i === 0 ? c.moveTo(x, y) : c.lineTo(x, y);
+  });
+  c.strokeStyle = '#ff8800';
+  c.lineWidth = 1.5;
+  c.stroke();
+}
+
+function updateAlerts(active, burned, areaBurned) {
+  const alerts = [];
+  if (active === 0 && step === 0) {
+    alerts.push({type:'safe', msg:'System ready. Select scenario and start simulation.'});
+  }
+  if (active > 50) alerts.push({type:'danger', msg:`🔴 CRITICAL: ${active} active fire cells. Immediate evacuation required.`});
+  else if (active > 20) alerts.push({type:'warn', msg:`🟡 WARNING: ${active} active cells. Deploy fire brigades immediately.`});
+  else if (active > 0) alerts.push({type:'warn', msg:`⚠ ${active} active fire cells detected. Monitor closely.`});
+  if (burned > 30) alerts.push({type:'danger', msg:`🔴 ${(+areaBurned).toFixed(1)} km² burned. Major structural damage likely.`});
+  if (windSpeed > 40) alerts.push({type:'warn', msg:`💨 High wind ${windSpeed} km/h — fire spread rate EXTREME.`});
+  if (simMinutes > 120) alerts.push({type:'warn', msg:`⏱ 2+ hours elapsed — fatigue factor increasing response time.`});
+  if (active === 0 && burned > 0) alerts.push({type:'safe', msg:`✅ Fire contained. Total area burned: ${areaBurned} km².`});
+
+  document.getElementById('alertsBox').innerHTML = alerts.length
+    ? alerts.map(a => `<div class="alert-box ${a.type === 'danger' ? '' : a.type}">${a.msg}</div>`).join('')
+    : '<div class="alert-box safe">Monitoring... No critical alerts.</div>';
+}
+
+// ── SIMULATION LOOP ─────────────────────────────────────
+function simLoop(ts) {
+  if (!simRunning || simPaused) return;
+  const interval = Math.max(50, 300 - simSpeedMultiplier * 28);
+  if (ts - lastStepTime > interval) {
+    const newFires = stepSimulation();
+    render();
+    updateStats();
+    lastStepTime = ts;
+    // Auto-stop if no active fire
+    let anyActive = false;
+    for (let y = 0; y < GRID_H && !anyActive; y++)
+      for (let x = 0; x < GRID_W && !anyActive; x++)
+        if (grid[y][x] === BURNING || grid[y][x] === INTENSE || grid[y][x] === IGNITING) anyActive = true;
+    // Enable "Send to EW" button once fire is active
+    const ewBtn = document.getElementById('btnSendEW');
+    if (ewBtn) ewBtn.disabled = !anyActive;
+    if (!anyActive && step > 5) {
+      simRunning = false;
+      document.getElementById('btnStart').style.display = 'block';
+      document.getElementById('btnPause').style.display = 'none';
+      render();
+      updateStats();
+      return;
+    }
+  }
+  animFrame = requestAnimationFrame(simLoop);
+}
+
+// ── CONTROLS ───────────────────────────────────────────
+function selectScenario(i) {
+  currentScenario = i;
+  document.querySelectorAll('.scenario-btn').forEach((b,j) => b.classList.toggle('active', j===i));
+  const sc = SCENARIOS[i];
+  document.getElementById('windDir').value = sc.windDir;
+  document.getElementById('windSpeed').value = sc.windSpeed;
+  document.getElementById('humidity').value = sc.humidity;
+  document.getElementById('fuelMoisture').value = sc.fuelMoisture;
+  updateWind(); updateParams();
+  resetSim();
+  // Pre-place ignition
+  sc.ignition.forEach(p => {
+    if (grid[p.y] && grid[p.y][p.x] !== undefined) grid[p.y][p.x] = IGNITING;
+  });
+  render(); updateStats();
+}
+
+// Ensure at least one ignition cell exists before running the loop
+function ensureIgnitionExists() {
+  let hasFire = false;
+  for (let y = 0; y < GRID_H && !hasFire; y++) {
+    for (let x = 0; x < GRID_W && !hasFire; x++) {
+      const s = grid[y][x];
+      if (s === BURNING || s === INTENSE || s === IGNITING) {
+        hasFire = true;
+      }
+    }
+  }
+  if (!hasFire) {
+    const sc = SCENARIOS[currentScenario];
+    if (sc && sc.ignition) {
+      sc.ignition.forEach(p => {
+        if (grid[p.y] && grid[p.y][p.x] !== undefined) {
+          grid[p.y][p.x] = IGNITING;
+          burnTime[p.y][p.x] = 0;
+        }
+      });
+    } else {
+      const cx = Math.floor(GRID_W / 2);
+      const cy = Math.floor(GRID_H / 2);
+      grid[cy][cx] = IGNITING;
+      burnTime[cy][cx] = 0;
+    }
+  }
+}
+
+function startSim() {
+  if (!simRunning) {
+    // Make sure we actually have a fire to simulate
+    ensureIgnitionExists();
+    render();
+    updateStats();
+    simRunning = true; simPaused = false;
+    document.getElementById('btnStart').style.display = 'none';
+    document.getElementById('btnPause').style.display = 'block';
+    document.getElementById('pauseOverlay').classList.remove('show');
+    animFrame = requestAnimationFrame(simLoop);
+  }
+}
+
+function pauseSim() {
+  if (simRunning) {
+    simPaused = !simPaused;
+    document.getElementById('btnPause').textContent = simPaused ? '▶  RESUME' : '⏸  PAUSE';
+    document.getElementById('pauseOverlay').classList.toggle('show', simPaused);
+    if (!simPaused) animFrame = requestAnimationFrame(simLoop);
+  }
+}
+
+function resetSim() {
+  simRunning = false; simPaused = false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  step = 0; simMinutes = 0; spreadHistory = [];
+  initGrid();
+  document.getElementById('btnStart').style.display = 'block';
+  document.getElementById('btnPause').style.display = 'none';
+  document.getElementById('btnPause').textContent = '⏸  PAUSE';
+  document.getElementById('pauseOverlay').classList.remove('show');
+  render(); updateStats();
+}
+
+function updateWind() {
+  windDir = +document.getElementById('windDir').value;
+  windSpeed = +document.getElementById('windSpeed').value;
+  document.getElementById('wdv').textContent = windDir + '°';
+  document.getElementById('wsv').textContent = windSpeed + ' km/h';
+  document.getElementById('windSpeedVal').textContent = windSpeed;
+  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+  const dirLabel = dirs[Math.round(windDir / 45) % 8];
+  document.getElementById('windDirLabel').textContent = dirLabel + ' — ' + windDir + '°';
+  document.getElementById('windArrow').style.transform =
+    `translateX(-50%) translateY(-100%) rotate(${windDir}deg)`;
+  updateStats();
+  if (!simRunning) render();
+}
+
+function updateParams() {
+  humidity = +document.getElementById('humidity').value;
+  fuelMoisture = +document.getElementById('fuelMoisture').value;
+  simSpeedMultiplier = +document.getElementById('simSpeed').value;
+  document.getElementById('humv').textContent = humidity + '%';
+  document.getElementById('fmv').textContent = fuelMoisture + '%';
+  const labels = ['','','1× real','','2×','','5×','','8×','','15×'];
+  document.getElementById('ssv').textContent = labels[simSpeedMultiplier] || simSpeedMultiplier + '×';
+  // Update time compression banner
+  const minsPerStep = simSpeedMultiplier * 2;
+  const approxSecsPerStep = Math.round(Math.max(50, 300 - simSpeedMultiplier*28) / 1000 * 10) / 10;
+  const realMinsPerScreenSec = (minsPerStep / approxSecsPerStep).toFixed(0);
+  const tcEl = document.getElementById('tcRate');
+  const tcStepEl = document.getElementById('tcStep');
+  if (tcEl) tcEl.textContent = `1 sec ≈ ${realMinsPerScreenSec} real min`;
+  if (tcStepEl) tcStepEl.textContent = minsPerStep;
+  updateStats();
+}
+
+function setTool(t) {
+  currentTool = t;
+  document.querySelectorAll('.tool-chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('tool-' + t).classList.add('active');
+  const hints = {
+    ignite: 'Click on map to place fire ignition point',
+    firebreak: 'Click/drag to place vegetation firebreaks — blocks spread',
+    water: 'Click/drag to apply aerial water drops — extinguishes active fire',
+    inspect: 'Click any cell to see its properties and risk data',
+  };
+  document.getElementById('toolHint').textContent = hints[t];
+}
+
+// Canvas mouse interaction
+function getCell(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+  return { x: Math.floor(mx / cellW), y: Math.floor(my / cellH) };
+}
+
+let mouseDown = false;
+canvas && canvas.addEventListener('mousedown', e => { mouseDown = true; handleCanvasClick(e); });
+document.addEventListener('mouseup', () => { mouseDown = false; });
+
+function handleCanvasClick(e) {
+  const {x, y} = getCell(e);
+  if (x < 0 || x >= GRID_W || y < 0 || y >= GRID_H) return;
+  if (currentTool === 'ignite') {
+    grid[y][x] = BURNING;
+    burnTime[y][x] = 0;
+  } else if (currentTool === 'firebreak') {
+    grid[y][x] = FIREBREAK;
+  } else if (currentTool === 'water') {
+    if (grid[y][x] === BURNING || grid[y][x] === INTENSE || grid[y][x] === IGNITING) {
+      grid[y][x] = WATER;
+      burnTime[y][x] = 0;
+    }
+  } else if (currentTool === 'inspect') {
+    const lt = landGrid[y][x];
+    const ltNames = ['Residential','Industrial','Forest','Slum','Road','Water','Commercial','Park'];
+    const s = grid[y][x];
+    const sNames = ['Empty','Fuel','Igniting','Burning','Intense','Burned','Firebreak','Water Drop','Road'];
+    alert(`Cell (${x}, ${y})\nLand Type: ${ltNames[lt]}\nState: ${sNames[s]||s}\nFuel load: ${FUEL_LOAD[lt]}\nSpread sensitivity: ${FUEL_LOAD_IDX[lt]}×`);
+  }
+  if (!simRunning) render();
+  updateStats();
+}
+
+// ── SETUP ──────────────────────────────────────────────
+function setupCanvas() {
+  canvas = document.getElementById('fireCanvas');
+  ctx = canvas.getContext('2d');
+
+  const wrap = document.getElementById('canvasWrap');
+  const size = Math.min(wrap.clientWidth - 20, wrap.clientHeight - 20);
+  canvas.width = size;
+  canvas.height = size;
+  cellW = size / GRID_W;
+  cellH = size / GRID_H;
+
+  canvas.addEventListener('mousedown', e => { mouseDown = true; handleCanvasClick(e); });
+  canvas.addEventListener('mousemove', e => { if (mouseDown) handleCanvasClick(e); });
+
+  initGrid();
+  // Pre-load scenario 0
+  selectScenario(0);
+  updateWind();
+  updateParams();
+}
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    setupCanvas();
+    // Load live wind/weather once canvas is ready
+    loadLiveConditions();
+  }, 150);
+});
+window.addEventListener('resize', () => { if (!simRunning) setTimeout(setupCanvas, 80); });
+
+// ── LIVE API INTEGRATION ────────────────────────────────
+// On page load, fetch real wind & weather conditions from
+// your existing OpenWeatherMap key via /api/fire/conditions
+
+async function loadLiveConditions() {
+  try {
+    const r = await fetch('/api/fire/conditions');
+    const d = await r.json();
+
+    // Apply real wind to sliders
+    document.getElementById('windSpeed').value = Math.min(80, d.wind_speed_kmh);
+    document.getElementById('windDir').value   = d.wind_direction;
+    document.getElementById('humidity').value  = d.humidity;
+    if (d.fuel_moisture) {
+      document.getElementById('fuelMoisture').value = d.fuel_moisture;
+    }
+    updateWind(); updateParams();
+
+    // Show live badge in header
+    const badge = document.querySelector('.model-badge');
+    if (badge) {
+      const danger = d.fire_danger;
+      const colors = {EXTREME:'#ff2d55',HIGH:'#ff6f00',MODERATE:'#ffb300',LOW:'#00e676'};
+      badge.innerHTML =
+        `ROTHERMEL CA · FARSITE-ADAPTED · CELL: 200m × 200m · GRID: 60×60 · REF: NFPA 921 &nbsp;|&nbsp; ` +
+        `<span style="color:${colors[danger]||'#00d2ff'}">● LIVE WIND ${d.wind_speed_kmh} km/h · ` +
+        `${d.fire_danger} FIRE DANGER · ${d.weather_desc.toUpperCase()}</span>`;
+    }
+
+    // Update compass
+    document.getElementById('windArrow').style.transform =
+      `translateX(-50%) translateY(-100%) rotate(${d.wind_direction}deg)`;
+    document.getElementById('windSpeedVal').textContent = d.wind_speed_kmh;
+
+    console.log('✅ Live conditions loaded:', d.fire_danger, d.wind_speed_kmh + 'km/h');
+  } catch(e) {
+    console.log('Using default wind conditions (server not running or API unavailable)');
+  }
+}
+
+// Fetch zone threat from backend every 15 steps
+let lastThreatFetch = 0;
+async function fetchZoneThreat(originX, originY) {
+  if (step - lastThreatFetch < 15) return;
+  lastThreatFetch = step;
+  try {
+    const r = await fetch(
+      `/api/fire/zone-threat?origin_x=${originX}&origin_y=${originY}` +
+      `&wind_dir=${windDir}&wind_spd=${windSpeed}&step=${step}`
+    );
+    const d = await r.json();
+
+    // Update zone risk panel with backend-calculated threats
+    if (d.zones && d.zones.length > 0) {
+      const colors = {BURNING:'var(--rd)',THREATENED:'#ff6f00',
+                      'AT RISK':'var(--am)',MONITOR:'var(--t2)'};
+      let html = '';
+      for (const z of d.zones.slice(0, 6)) {
+        html += `<div class="st-row">
+          <span class="st-key">${z.zone}</span>
+          <span class="st-val" style="color:${colors[z.status]||'var(--t2)'}">
+            ${z.status}
+          </span>
+        </div>`;
+      }
+      document.getElementById('zoneRisks').innerHTML = html;
+    }
+  } catch(e) {
+    // Fallback to JS-only zone risk (already handled in updateZoneRisks)
+  }
+}
+
+// Dropdown toggle
+function toggleDrop(btn) {
+  const drop = btn.nextElementSibling;
+  drop.classList.toggle('open');
+  btn.classList.toggle('open');
+  document.addEventListener('click', function close(e) {
+    if (!btn.contains(e.target) && !drop.contains(e.target)) {
+      drop.classList.remove('open');
+      btn.classList.remove('open');
+      document.removeEventListener('click', close);
+    }
+  }, { capture: true });
+}
+
+// ── SEND TO EARLY WARNING COMMAND ──────────────────────────────────
+async function sendToEarlyWarning() {
+  const btn = document.getElementById('btnSendEW');
+  btn.disabled = true;
+  btn.textContent = '⏳  SENDING...';
+
+  // Collect current sim state
+  let highRiskZones = [];
+  const zoneRows = document.querySelectorAll('#zoneRisks .st-row');
+  zoneRows.forEach(row => {
+    const name = row.querySelector('.st-key')?.textContent;
+    const status = row.querySelector('.st-val')?.textContent?.trim();
+    if (status && status !== 'SAFE') highRiskZones.push({zone: name, status});
+  });
+
+  const payload = {
+    source: 'fire_simulation',
+    scenario: SCENARIOS[currentScenario]?.name || 'Unknown',
+    sim_minutes: simMinutes,
+    active_cells: +document.getElementById('sActiveCells').textContent,
+    area_burned_km2: parseFloat(document.getElementById('sAreaBurned').textContent),
+    wind_speed_kmh: windSpeed,
+    humidity_pct: humidity,
+    fuel_moisture_pct: fuelMoisture,
+    wind_dir: windDir,
+    high_risk_zones: highRiskZones,
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    // Push to Early Warning system via Flask
+    const r = await fetch('/api/simulation/push-alert', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    // Show success toast regardless of server response
+  } catch(e) {}
+
+  // Store in sessionStorage so Early Warning page can read it
+  try { sessionStorage.setItem('sim_alert', JSON.stringify(payload)); } catch(e) {}
+
+  // Show toast
+  const toast = document.getElementById('ewSentToast');
+  toast.textContent = `✅ Fire scenario "${payload.scenario}" pushed to Early Warning — ${highRiskZones.length} zone(s) flagged`;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 5000);
+
+  btn.textContent = '✅  ALERT SENT';
+  btn.style.color = 'var(--gn)';
+  btn.style.borderColor = 'var(--gn)';
+  setTimeout(() => {
+    btn.textContent = '📡  SEND ALERT TO EARLY WARNING';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+    btn.disabled = false;
+  }, 8000);
+}
+
+// Clock
+function tick() { document.getElementById('clk').textContent = new Date().toLocaleTimeString('en-IN',{hour12:false}); }
+tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>

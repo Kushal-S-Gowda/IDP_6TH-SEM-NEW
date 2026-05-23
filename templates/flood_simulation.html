@@ -1,0 +1,1242 @@
+{% extends "base.html" %}
+{% block title %}Bengaluru Flood Inundation Predictive Model{% endblock %}
+{% block head %}
+<style>
+:root{--w1:#0044ff;--w2:#0088ff;--w3:#00aaff;--w4:#00ccff;}
+/* ── PAGE HEADER ── */
+.ph{padding:20px 40px 14px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:flex-end;}
+.phe{font-family:var(--fm);font-size:.62rem;color:var(--cy);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:8px;}
+.phe::before{content:'';width:16px;height:1px;background:var(--cy);}
+.pht{font-family:var(--fu);font-weight:700;font-size:1.6rem;letter-spacing:-.5px;text-transform:uppercase;}
+.phs{font-size:.79rem;color:var(--t2);margin-top:3px;}
+.model-badge{font-family:var(--fm);font-size:.6rem;color:var(--t3);border:1px solid var(--bd);border-radius:3px;padding:4px 10px;letter-spacing:.5px;}
+
+/* ── MAIN LAYOUT ── */
+.layout{display:grid;grid-template-columns:280px 1fr 260px;height:calc(100vh - 116px);gap:1px;background:var(--bd);}
+
+/* ── LEFT PANEL ── */
+.ctrl-panel{background:var(--sf);overflow-y:auto;padding:0;}
+.ctrl-section{padding:16px 18px;border-bottom:1px solid var(--bd);}
+.cs-title{font-family:var(--fm);font-size:.6rem;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.cs-title::before{content:'';width:3px;height:10px;background:var(--cy);border-radius:1px;}
+
+.scenario-btn{width:100%;padding:10px 12px;margin-bottom:6px;background:var(--sf2);border:1px solid var(--bd);border-radius:4px;color:var(--t2);font-family:var(--fu);font-weight:600;font-size:.82rem;letter-spacing:.5px;text-align:left;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:8px;}
+.scenario-btn:hover{border-color:var(--bdh);color:var(--t1);background:rgba(0,210,255,.05);}
+.scenario-btn.active{border-color:var(--cy);color:var(--cy);background:rgba(0,210,255,.07);}
+.scenario-btn.manmade{border-left:3px solid var(--rd);}
+.scenario-btn.manmade.active{border-color:var(--rd);color:var(--rd);background:rgba(255,45,85,.07);}
+.sb-icon{font-size:1rem;flex-shrink:0;}
+.sb-info{flex:1;}
+.sb-name{font-size:.82rem;font-weight:700;}
+.sb-sub{font-family:var(--fm);font-size:.58rem;color:var(--t3);margin-top:1px;}
+.sb-badge{font-family:var(--fm);font-size:.5rem;padding:1px 5px;border-radius:2px;background:rgba(255,45,85,.15);color:var(--rd);border:1px solid rgba(255,45,85,.25);margin-top:3px;display:inline-block;}
+
+.slider-row{margin-bottom:14px;}
+.sl-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.sl-label{font-family:var(--fm);font-size:.62rem;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;}
+.sl-val{font-family:var(--fm);font-size:.72rem;color:var(--cy);font-weight:700;}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--sf2);border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--cy);border-radius:50%;cursor:pointer;border:2px solid var(--bg);transition:transform .15s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
+
+.tool-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.tool-chip{font-family:var(--fm);font-size:.62rem;padding:5px 10px;border:1px solid var(--bd);border-radius:3px;color:var(--t3);cursor:pointer;transition:all .18s;background:var(--sf2);}
+.tool-chip:hover{border-color:var(--bdh);color:var(--t2);}
+.tool-chip.active{border-color:var(--cy);color:var(--cy);background:rgba(0,210,255,.08);}
+.tool-chip.drain-tool.active{border-color:var(--rd);color:var(--rd);background:rgba(255,45,85,.08);}
+.tool-chip.barrier-tool.active{border-color:var(--am);color:var(--am);background:rgba(255,179,0,.08);}
+
+.btn-flood{width:100%;padding:13px;border-radius:4px;border:none;cursor:pointer;font-family:var(--fu);font-weight:700;font-size:.9rem;letter-spacing:1.5px;text-transform:uppercase;transition:all .2s;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-start{background:linear-gradient(135deg,#0044ff,#0088ff);color:#fff;}
+.btn-start:hover{box-shadow:0 4px 24px rgba(0,100,255,.5);transform:translateY(-1px);}
+.btn-pause{background:rgba(255,179,0,.12);color:var(--am);border:1px solid rgba(255,179,0,.3);}
+.btn-pause:hover{background:rgba(255,179,0,.22);}
+.btn-reset{background:transparent;color:var(--t2);border:1px solid var(--bd);}
+.btn-reset:hover{border-color:var(--bdh);color:var(--t1);}
+
+/* ── CANVAS ── */
+.canvas-wrap{background:var(--bg);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+#floodCanvas{cursor:crosshair;image-rendering:pixelated;max-width:100%;max-height:100%;}
+.canvas-overlay-title{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-family:var(--fm);font-size:.62rem;color:rgba(0,210,255,.5);letter-spacing:2px;text-transform:uppercase;pointer-events:none;white-space:nowrap;}
+.canvas-overlay-pause{position:absolute;inset:0;background:rgba(2,12,27,.75);display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;}
+.canvas-overlay-pause.show{display:flex;}
+.pause-text{font-family:var(--fu);font-weight:700;font-size:1.4rem;letter-spacing:3px;color:var(--am);text-transform:uppercase;}
+.pause-sub{font-family:var(--fm);font-size:.65rem;color:var(--t3);letter-spacing:1px;}
+.sim-timer{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-family:var(--fm);font-size:.7rem;color:var(--t3);letter-spacing:2px;background:rgba(2,12,27,.8);padding:4px 14px;border-radius:3px;border:1px solid var(--bd);pointer-events:none;}
+
+/* Flood depth legend */
+.map-legend{position:absolute;bottom:50px;left:16px;background:rgba(2,12,27,.9);border:1px solid var(--bd);border-radius:4px;padding:10px 14px;}
+.leg-item{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.leg-item:last-child{margin-bottom:0;}
+.leg-swatch{width:12px;height:12px;border-radius:2px;flex-shrink:0;}
+.leg-label{font-family:var(--fm);font-size:.58rem;color:var(--t2);letter-spacing:.5px;text-transform:uppercase;}
+
+/* Early warning flash overlay */
+.ew-alert{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(255,45,85,.12);border:1px solid var(--rd);border-radius:4px;padding:8px 20px;font-family:var(--fm);font-size:.68rem;color:var(--rd);letter-spacing:1px;text-transform:uppercase;display:none;animation:alertPulse 1s infinite;white-space:nowrap;}
+.ew-alert.show{display:block;}
+@keyframes alertPulse{0%,100%{opacity:1;border-color:var(--rd)}50%{opacity:.6;border-color:transparent}}
+
+/* ── RIGHT PANEL ── */
+.stats-panel{background:var(--sf);overflow-y:auto;}
+.stat-section{padding:16px 18px;border-bottom:1px solid var(--bd);}
+.ss-title{font-family:var(--fm);font-size:.6rem;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.ss-title::before{content:'';width:3px;height:10px;border-radius:1px;}
+.ss-title.water-title::before{background:var(--cy);}
+.ss-title.econ-title::before{background:var(--am);}
+.ss-title.zone-title::before{background:var(--vi);}
+.ss-title.warn-title::before{background:var(--rd);}
+
+.big-stat{text-align:center;padding:10px 0;}
+.bs-val{font-family:var(--fu);font-weight:700;font-size:2.2rem;letter-spacing:-1px;line-height:1;}
+.bs-label{font-family:var(--fm);font-size:.6rem;color:var(--t3);letter-spacing:.5px;text-transform:uppercase;margin-top:4px;}
+
+.st-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(0,210,255,.05);}
+.st-row:last-child{border-bottom:none;}
+.st-key{font-family:var(--fm);font-size:.62rem;color:var(--t3);}
+.st-val{font-family:var(--fm);font-size:.72rem;color:var(--t2);font-weight:500;}
+.st-val.water{color:var(--cy);}
+.st-val.warn{color:var(--am);}
+.st-val.safe{color:var(--gn);}
+.st-val.crit{color:var(--rd);animation:blink 1s infinite;}
+
+.econ-card{background:rgba(255,179,0,.05);border:1px solid rgba(255,179,0,.15);border-radius:4px;padding:12px 14px;margin-bottom:8px;}
+.ec-label{font-family:var(--fm);font-size:.58rem;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.ec-val{font-family:var(--fu);font-weight:700;font-size:1.3rem;color:var(--am);letter-spacing:-.5px;}
+.ec-sub{font-family:var(--fm);font-size:.6rem;color:var(--t3);margin-top:2px;}
+
+/* Zone status rows */
+.zone-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(0,210,255,.05);}
+.zone-row:last-child{border-bottom:none;}
+.zone-name{font-family:var(--fm);font-size:.62rem;color:var(--t2);}
+.zone-depth{font-family:var(--fm);font-size:.6rem;color:var(--t3);}
+.zone-status{font-family:var(--fm);font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:2px;letter-spacing:.5px;}
+.zs-safe{color:var(--gn);background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.2);}
+.zs-watch{color:var(--am);background:rgba(255,179,0,.1);border:1px solid rgba(255,179,0,.2);}
+.zs-flood{color:#ff6f00;background:rgba(255,111,0,.1);border:1px solid rgba(255,111,0,.2);}
+.zs-crit{color:var(--rd);background:rgba(255,45,85,.1);border:1px solid rgba(255,45,85,.2);animation:blink 1s infinite;}
+
+.alert-box{background:rgba(255,45,85,.07);border:1px solid rgba(255,45,85,.2);border-radius:4px;padding:10px 12px;margin-bottom:6px;font-family:var(--fm);font-size:.65rem;color:var(--rd);line-height:1.5;}
+.alert-box.warn{background:rgba(255,179,0,.07);border-color:rgba(255,179,0,.2);color:var(--am);}
+.alert-box.safe{background:rgba(0,230,118,.07);border-color:rgba(0,230,118,.2);color:var(--gn);}
+.alert-box.info{background:rgba(0,210,255,.05);border-color:rgba(0,210,255,.15);color:var(--cy);}
+
+/* Depth chart */
+#depthChart{width:100%;height:90px;}
+
+/* Manmade info box */
+.mm-box{background:rgba(255,45,85,.05);border:1px solid rgba(255,45,85,.15);border-radius:4px;padding:12px;margin-top:8px;display:none;}
+.mm-box.show{display:block;}
+.mm-row{display:flex;gap:8px;margin-bottom:7px;font-size:.78rem;}
+.mm-row:last-child{margin-bottom:0;}
+.mm-key{font-family:var(--fm);font-size:.58rem;color:var(--rd);min-width:80px;text-transform:uppercase;letter-spacing:.3px;padding-top:2px;}
+.mm-val{color:var(--t2);line-height:1.5;}
+
+/* ── TIME COMPRESSION BANNER ── */
+.tc-banner {
+  position: absolute; bottom: 50px; right: 16px;
+  background: rgba(2,12,27,.92); border: 1px solid rgba(0,150,255,.25);
+  border-left: 3px solid var(--cy);
+  border-radius: 4px; padding: 8px 14px;
+  font-family: var(--fm); font-size: .6rem; color: var(--t3);
+  letter-spacing: .4px; line-height: 1.7; pointer-events: none;
+  min-width: 200px;
+}
+.tc-banner .tc-val { color: var(--cy); font-weight: 700; font-size: .68rem; }
+.tc-banner .tc-title { color: var(--am); text-transform: uppercase; letter-spacing: 1px; font-size: .58rem; margin-bottom: 3px; }
+
+/* ── WHAT THIS DEMONSTRATES ── */
+.wtd-panel {
+  padding: 14px 18px; border-bottom: 1px solid var(--bd);
+  background: rgba(0,150,255,.03);
+}
+.wtd-title {
+  font-family: var(--fm); font-size: .58rem; color: var(--cy);
+  letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.wtd-title::before { content: ''; width: 3px; height: 10px; background: var(--cy); border-radius: 1px; }
+.wtd-body { font-family: var(--fm); font-size: .62rem; color: var(--t2); line-height: 1.75; }
+.wtd-tag { display: inline-block; font-size: .55rem; padding: 2px 7px; border-radius: 2px; margin: 2px 2px 0 0;
+  background: rgba(0,210,255,.08); border: 1px solid rgba(0,210,255,.2); color: var(--cy); letter-spacing: .5px; }
+.wtd-tag.rd { background: rgba(255,45,85,.08); border-color: rgba(255,45,85,.2); color: var(--rd); }
+.wtd-tag.gn { background: rgba(0,230,118,.08); border-color: rgba(0,230,118,.2); color: var(--gn); }
+.wtd-tag.am { background: rgba(255,179,0,.08); border-color: rgba(255,179,0,.2); color: var(--am); }
+
+/* ── SEND TO EARLY WARNING ── */
+.btn-ew {
+  width:100%; padding:11px; border-radius:4px; border:none; cursor:pointer;
+  font-family:var(--fu); font-weight:700; font-size:.82rem;
+  letter-spacing:1.2px; text-transform:uppercase; transition:all .2s;
+  margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:8px;
+  background:rgba(0,210,255,.08); color:var(--cy); border:1px solid rgba(0,210,255,.25);
+}
+.btn-ew:hover { background:rgba(0,210,255,.16); border-color:var(--cy); box-shadow:0 0 16px rgba(0,210,255,.15); }
+.btn-ew:disabled { opacity:.35; cursor:not-allowed; }
+.ew-sent-toast {
+  position:fixed; bottom:24px; right:24px; z-index:9999;
+  background:rgba(0,230,118,.12); border:1px solid var(--gn);
+  border-radius:4px; padding:12px 20px;
+  font-family:var(--fm); font-size:.7rem; color:var(--gn); letter-spacing:.5px;
+  display:none; animation:slideUp .3s ease;
+}
+.ew-sent-toast.show { display:block; }
+@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+</style>
+{% endblock %}
+{% block main_class %}{% endblock %}
+{% block content %}
+<!-- HEADER -->
+<div class="ph">
+  <div>
+    <div class="phe">SCS Curve Number Hydrology Model · Bengaluru DEM Topology · Theme 11 — Disaster &amp; Climate Resilience</div>
+    <div class="pht">Flood Inundation <span style="color:var(--cy)">Predictive Model</span></div>
+    <div class="phs">SCS-CN runoff · Elevation-flow CA · Live parameter-driven rainfall (mm/hr × duration)</div>
+  </div>
+  <div class="model-badge" id="modelBadge">SCS CN HYDROLOGY · ELEVATION-FLOW CA · CELL: 200m × 200m · GRID: 60×60 · REF: CWC GUIDELINES</div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- LEFT PANEL -->
+  <div class="ctrl-panel">
+
+    <!-- What This Demonstrates -->
+    <div class="wtd-panel">
+      <div class="wtd-title">What This Demonstrates</div>
+      <div class="wtd-body">
+        This predictive model simulates urban flood inundation using real Bengaluru elevation data and physics-based water flow — the <b>SCS Curve Number hydrology method</b> adapted for cellular automaton (Central Water Commission guidelines). Soil saturation, drain capacity, and lake overflow are derived from real monsoon data.<br><br>
+        <b>Purpose:</b> Physics-based inundation map — water follows elevation, drains, and user-set rainfall (mm/hr × hours). Outputs feed Early Warning via “Send Alert”. 2022 scenario uses IMD-reported ~135 mm/24h totals.<br><br>
+        <div style="margin-top:6px">
+          <span class="wtd-tag">Theme 11</span>
+          <span class="wtd-tag gn">Early Warning</span>
+          <span class="wtd-tag am">Micro-level Forecast</span>
+          <span class="wtd-tag rd">Manmade Disasters</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="cs-title">Flood Scenarios</div>
+
+      <button class="scenario-btn active" data-s="0" onclick="selectScenario(0)">
+        <span class="sb-icon">🌧️</span>
+        <div class="sb-info">
+          <div class="sb-name">Normal Monsoon</div>
+          <div class="sb-sub">Gradual accumulation · Low zones affected</div>
+        </div>
+      </button>
+
+      <button class="scenario-btn" data-s="1" onclick="selectScenario(1)">
+        <span class="sb-icon">🌊</span>
+        <div class="sb-info">
+          <div class="sb-name">Bellandur Lake Overflow</div>
+          <div class="sb-sub">Lake breach → HSR Layout → Marathahalli</div>
+        </div>
+      </button>
+
+      <button class="scenario-btn" data-s="2" onclick="selectScenario(2)">
+        <span class="sb-icon">⛈️</span>
+        <div class="sb-info">
+          <div class="sb-name">2022 Bengaluru Replay</div>
+          <div class="sb-sub">Historical event · IT corridors submerged</div>
+        </div>
+      </button>
+
+      <button class="scenario-btn" data-s="3" onclick="selectScenario(3)">
+        <span class="sb-icon">🌀</span>
+        <div class="sb-info">
+          <div class="sb-name">Extreme Cloudburst</div>
+          <div class="sb-sub">165mm/hr · Multi-zone simultaneous flooding</div>
+        </div>
+      </button>
+
+      <button class="scenario-btn manmade" data-s="4" onclick="selectScenario(4)">
+        <span class="sb-icon">🏗️</span>
+        <div class="sb-info">
+          <div class="sb-name">KRS Dam Surge</div>
+          <div class="sb-sub">Structural failure · Cauvery water surge</div>
+          <div class="sb-badge">MANMADE</div>
+        </div>
+      </button>
+
+      <button class="scenario-btn manmade" data-s="5" onclick="selectScenario(5)">
+        <span class="sb-icon">🚧</span>
+        <div class="sb-info">
+          <div class="sb-name">Urban Drain Failure</div>
+          <div class="sb-sub">Blocked drains · Flash flood Koramangala</div>
+          <div class="sb-badge">MANMADE</div>
+        </div>
+      </button>
+
+    </div>
+
+    <!-- Rainfall controls -->
+    <div class="ctrl-section">
+      <div class="cs-title">Rainfall Parameters</div>
+      <div class="slider-row">
+        <div class="sl-header"><span class="sl-label">Intensity (mm/hr)</span><span class="sl-val" id="sv-rain">45</span></div>
+        <input type="range" id="sl-rain" min="5" max="200" value="45" oninput="updateParams()">
+      </div>
+      <div class="slider-row">
+        <div class="sl-header"><span class="sl-label">Duration (hours)</span><span class="sl-val" id="sv-dur">6h</span></div>
+        <input type="range" id="sl-dur" min="1" max="48" value="6" oninput="updateParams()">
+      </div>
+      <div class="slider-row">
+        <div class="sl-header"><span class="sl-label">Soil Saturation (%)</span><span class="sl-val" id="sv-sat">60%</span></div>
+        <input type="range" id="sl-sat" min="0" max="100" value="60" oninput="updateParams()">
+      </div>
+      <div class="slider-row">
+        <div class="sl-header"><span class="sl-label">Drain Capacity (%)</span><span class="sl-val" id="sv-drain">70%</span></div>
+        <input type="range" id="sl-drain" min="0" max="100" value="70" oninput="updateParams()">
+      </div>
+      <div class="slider-row">
+        <div class="sl-header"><span class="sl-label">Sim Speed</span><span class="sl-val" id="sv-speed">3×</span></div>
+        <input type="range" id="sl-speed" min="1" max="10" value="3" oninput="updateParams()">
+      </div>
+      <div style="margin-top:10px;padding:8px 10px;background:var(--sf2);border:1px solid var(--bd);border-radius:4px;font-family:var(--fm);font-size:.58rem;color:var(--t2);line-height:1.6;">
+        <div>Event rainfall budget: <b id="rainBudget" style="color:var(--cy)">270 mm</b> total</div>
+        <div>Applied rate: <span id="rainRateLabel">45 mm/hr</span> · Step: <span id="stepMinLabel">9 min</span> · <span id="rainPhase" style="color:var(--gn)">rain active</span></div>
+        <div id="scsHint" style="color:var(--t3);margin-top:4px;">Sliders apply live during sim · SCS-CN scales with saturation &amp; drain</div>
+      </div>
+    </div>
+
+    <!-- Tools -->
+    <div class="ctrl-section">
+      <div class="cs-title">Intervention Tools</div>
+      <div class="tool-chips">
+        <div class="tool-chip active" id="tool-rain" onclick="setTool('rain')">🌧️ Add Rain</div>
+        <div class="tool-chip drain-tool" id="tool-drain" onclick="setTool('drain')">🚨 Block Drain</div>
+        <div class="tool-chip barrier-tool" id="tool-barrier" onclick="setTool('barrier')">🟡 Sandbag</div>
+        <div class="tool-chip" id="tool-inspect" onclick="setTool('inspect')">🔍 Inspect</div>
+      </div>
+      <div style="margin-top:10px;font-family:var(--fm);font-size:.6rem;color:var(--t3);line-height:1.6" id="toolHint">
+        Click on map to add intense local rainfall to any cell
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="ctrl-section">
+      <button class="btn-flood btn-start" id="btnStart" onclick="startSim()">▶ &nbsp;START SIMULATION</button>
+      <button class="btn-flood btn-pause" id="btnPause" onclick="pauseSim()" style="display:none">⏸ &nbsp;PAUSE</button>
+      <button class="btn-flood btn-reset" onclick="resetSim()">↺ &nbsp;RESET</button>
+      <button class="btn-ew" id="btnSendEW" onclick="sendToEarlyWarning()" disabled>
+        📡 &nbsp;SEND ALERT TO EARLY WARNING
+      </button>
+
+    </div>
+
+    <!-- Manmade scenario info -->
+    <div class="ctrl-section">
+      <div class="mm-box" id="mmBox">
+        <div style="font-family:var(--fm);font-size:.58rem;color:var(--rd);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase">⚙ Manmade Disaster Details</div>
+        <div class="mm-row"><div class="mm-key">Root Cause</div><div class="mm-val" id="mm-cause">—</div></div>
+        <div class="mm-row"><div class="mm-key">Trigger</div><div class="mm-val" id="mm-trigger">—</div></div>
+        <div class="mm-row"><div class="mm-key">Special Risk</div><div class="mm-val" id="mm-risk">—</div></div>
+        <div class="mm-row"><div class="mm-key">Response</div><div class="mm-val" id="mm-response">—</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CANVAS -->
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="floodCanvas"></canvas>
+    <div class="canvas-overlay-title">BENGALURU URBAN GRID · 12km × 12km · CELL SIZE 200m</div>
+    <div class="canvas-overlay-pause" id="pauseOverlay">
+      <div class="pause-text">⏸ PAUSED</div>
+      <div class="pause-sub">CLICK RESUME TO CONTINUE</div>
+    </div>
+    <div class="ew-alert" id="ewAlert">⚠ FLOOD THRESHOLD REACHED — CHECK ZONE PANEL</div>
+    <div class="sim-timer" id="simTimer">T+00:00:00 · STEP 0</div>
+    <div class="tc-banner" id="tcBanner">
+      <div class="tc-title">⏱ Time Compression Active</div>
+      <div><span class="tc-val" id="tcRate">1 sec ≈ 9 real min</span></div>
+      <div style="margin-top:2px">Each grid step = <span class="tc-val" id="tcStep">9</span> simulated minutes</div>
+      <div style="margin-top:2px">Based on CWC flood accumulation data</div>
+    </div>
+    <div class="map-legend">
+      <div class="leg-item"><div class="leg-swatch" style="background:#1a2a1a"></div><span class="leg-label">Dry / Safe</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#004488"></div><span class="leg-label">Shallow (&lt;0.3m)</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#0055cc"></div><span class="leg-label">Moderate (0.3–1m)</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#0033ff"></div><span class="leg-label">Deep (1–2m)</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#0000cc"></div><span class="leg-label">Severe (&gt;2m)</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#220033"></div><span class="leg-label">Catastrophic (&gt;4m)</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#2a1a00"></div><span class="leg-label">Lake / Water Body</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#1a1a2a"></div><span class="leg-label">Road</span></div>
+      <div class="leg-item"><div class="leg-swatch" style="background:#aa8800"></div><span class="leg-label">Sandbag Barrier</span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="stats-panel">
+
+    <div class="stat-section">
+      <div class="ss-title water-title">Flood Status</div>
+      <div class="big-stat">
+        <div class="bs-val" id="sTotalFlooded" style="color:var(--cy)">0</div>
+        <div class="bs-label">Cells Flooded</div>
+      </div>
+      <div class="st-row"><span class="st-key">Area Flooded</span><span class="st-val water" id="sArea">0 km²</span></div>
+      <div class="st-row"><span class="st-key">Max Water Depth</span><span class="st-val warn" id="sMaxDepth">0.0 m</span></div>
+      <div class="st-row"><span class="st-key">Avg Depth (flooded)</span><span class="st-val" id="sAvgDepth">0.0 m</span></div>
+      <div class="st-row"><span class="st-key">Flood Spread Rate</span><span class="st-val water" id="sSpread">0 cells/min</span></div>
+      <div class="st-row"><span class="st-key">Peak Accumulation</span><span class="st-val" id="sPeak">—</span></div>
+      <div class="st-row"><span class="st-key">Sim Time</span><span class="st-val" id="sTime">0 min</span></div>
+    </div>
+
+    <!-- Early Warning Panel -->
+    <div class="stat-section">
+      <div class="ss-title warn-title">Early Warning Status</div>
+      <div id="ewStatus">
+        <div class="alert-box safe">System monitoring. No warnings active.</div>
+      </div>
+    </div>
+
+    <!-- Hydrology (parameter-driven) -->
+    <div class="stat-section">
+      <div class="ss-title water-title">Rainfall &amp; Runoff (SCS-CN)</div>
+      <div class="st-row"><span class="st-key">Intensity × duration</span><span class="st-val water" id="hIntensity">45 mm/hr × 6h</span></div>
+      <div class="st-row"><span class="st-key">Rain applied (sim)</span><span class="st-val" id="hApplied">0 mm</span></div>
+      <div class="st-row"><span class="st-key">Est. SCS runoff</span><span class="st-val warn" id="hRunoff">0 mm</span></div>
+      <div class="st-row"><span class="st-key">Soil saturation</span><span class="st-val" id="hSat">60%</span></div>
+      <div class="st-row"><span class="st-key">Drain capacity</span><span class="st-val" id="hDrain">70%</span></div>
+    </div>
+
+    <!-- Zone Status -->
+    <div class="stat-section">
+      <div class="ss-title zone-title">Zone Flood Status</div>
+      <div id="zoneStatus">
+        <div class="zone-row"><span class="zone-name">Bellandur</span><span class="zone-status zs-safe">SAFE</span></div>
+        <div class="zone-row"><span class="zone-name">HSR Layout</span><span class="zone-status zs-safe">SAFE</span></div>
+        <div class="zone-row"><span class="zone-name">Marathahalli</span><span class="zone-status zs-safe">SAFE</span></div>
+        <div class="zone-row"><span class="zone-name">Koramangala</span><span class="zone-status zs-safe">SAFE</span></div>
+        <div class="zone-row"><span class="zone-name">Whitefield</span><span class="zone-status zs-safe">SAFE</span></div>
+        <div class="zone-row"><span class="zone-name">Electronic City</span><span class="zone-status zs-safe">SAFE</span></div>
+        <div class="zone-row"><span class="zone-name">Indiranagar</span><span class="zone-status zs-safe">SAFE</span></div>
+        <div class="zone-row"><span class="zone-name">Hebbal</span><span class="zone-status zs-safe">SAFE</span></div>
+      </div>
+    </div>
+
+    <!-- Depth over time chart -->
+    <div class="stat-section">
+      <div class="ss-title water-title">Flood Progression</div>
+      <canvas id="depthChart"></canvas>
+    </div>
+
+  </div>
+</div>
+<div class="ew-sent-toast" id="ewSentToast">✅ Alert sent to Early Warning Command</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  BENGALURU FLOOD SPREAD SIMULATION
+//  Physics: Elevation-based water flow cellular automaton
+//  Water flows to lower neighbours · Lakes overflow
+//  Drain capacity limits runoff · Soil saturation
+//  Grid: 60×60 cells · 200m per cell · 12km × 12km
+// ═══════════════════════════════════════════════════════
+
+const GW = 60, GH = 60;
+const CELL_KM2 = 0.04; // 200m × 200m
+
+// ── BENGALURU ELEVATION MAP ──────────────────────────
+// Real approximate elevation zones (metres above sea level)
+// Higher = drains faster. Low basins = flood first.
+// Hebbal/Yelahanka: ~920m | Indiranagar: ~915m
+// Koramangala/HSR: ~905m | Bellandur basin: ~895m
+// Whitefield: ~900m | Electronic City: ~890m
+
+function buildElevationMap() {
+  const elev = [];
+  for (let y = 0; y < GH; y++) {
+    elev[y] = [];
+    for (let x = 0; x < GW; x++) {
+      // Base gradient: slightly higher in north, lower in south-east
+      let e = 920 - (y * 0.4) - (x * 0.15);
+      // Bellandur basin depression (major flood sink)
+      const dB = dist(x,y,36,42);
+      if (dB < 8) e -= (8 - dB) * 3.5;
+      // HSR Layout low zone
+      const dH = dist(x,y,28,40);
+      if (dH < 6) e -= (6 - dH) * 2;
+      // Koramangala basin
+      const dK = dist(x,y,26,32);
+      if (dK < 5) e -= (5 - dK) * 2.5;
+      // Marathahalli low
+      const dM = dist(x,y,42,30);
+      if (dM < 5) e -= (5 - dM) * 1.8;
+      // Electronic City low basin
+      const dE = dist(x,y,44,50);
+      if (dE < 6) e -= (6 - dE) * 2;
+      // Whitefield slightly elevated plateau
+      const dW = dist(x,y,48,20);
+      if (dW < 6) e += (6 - dW) * 1;
+      // Hebbal elevated
+      const dHb = dist(x,y,22,10);
+      if (dHb < 5) e += (5 - dHb) * 2;
+      // Bannerghatta hills (south)
+      if (y > 50) e += (y - 50) * 1.5;
+      // Road ridges (slightly elevated)
+      if (x === 20 || x === 40 || y === 20 || y === 40) e += 1;
+      elev[y][x] = Math.max(850, e);
+    }
+  }
+  return elev;
+}
+
+function dist(x1,y1,x2,y2){ return Math.sqrt((x1-x2)**2+(y1-y2)**2); }
+
+// ── LAND TYPE MAP ────────────────────────────────────
+const LT = { RESIDENTIAL:0, COMMERCIAL:1, INDUSTRIAL:2, SLUM:3, ROAD:4, LAKE:5, PARK:6, FOREST:7 };
+// Infiltration / absorption by land type (higher = more retention)
+const LT_ABSORB = [0.08, 0.05, 0.04, 0.12, 0.0, 0.0, 0.18, 0.28];
+const LT_COLORS = ['#1e2d1e','#1a1f2e','#1a1f2a','#2a1a0e','#1a1a26','#0a1820','#112211','#0d1f0d'];
+
+function buildLandMap() {
+  const land = [];
+  for (let y = 0; y < GH; y++) {
+    land[y] = [];
+    for (let x = 0; x < GW; x++) {
+      let lt = LT.RESIDENTIAL;
+      // Roads
+      if (x===20||x===40||(y===20||y===40)&&x>5&&x<55) { lt=LT.ROAD; }
+      // Lakes
+      else if (dist(x,y,36,42)<4) lt = LT.LAKE;   // Bellandur lake
+      else if (dist(x,y,10,44)<3) lt = LT.LAKE;   // Varthur lake
+      else if (dist(x,y,48,12)<3) lt = LT.LAKE;   // Whitefield lake
+      else if (dist(x,y,22,28)<2.5) lt = LT.LAKE; // Sankey tank area
+      // Forest / periphery
+      else if (y>52||x<6||x>54) lt = LT.FOREST;
+      else if (dist(x,y,30,54)<6) lt = LT.FOREST; // Bannerghatta
+      // Industrial
+      else if (x>38&&x<55&&y>44&&y<56) lt = LT.INDUSTRIAL; // Electronic City
+      else if (x>42&&x<55&&y>14&&y<26) lt = LT.INDUSTRIAL; // Whitefield industrial
+      // Slum / dense
+      else if (x>8&&x<18&&y>30&&y<42) lt = LT.SLUM;
+      else if (x>22&&x<30&&y>22&&y<32) lt = LT.SLUM;
+      // Commercial
+      else if (x>20&&x<40&&y>8&&y<20) lt = LT.COMMERCIAL;
+      else if (x>22&&x<38&&y>28&&y<38) lt = LT.COMMERCIAL;
+      // Parks
+      else if (dist(x,y,16,16)<4) lt = LT.PARK;
+      else if (dist(x,y,38,34)<3) lt = LT.PARK;
+      land[y][x] = lt;
+    }
+  }
+  return land;
+}
+
+// ── ZONES ────────────────────────────────────────────
+const ZONES = [
+  {name:'Bellandur',     cx:36, cy:44, r:6,  popDen:35000},
+  {name:'HSR Layout',    cx:26, cy:40, r:5,  popDen:28000},
+  {name:'Marathahalli',  cx:42, cy:30, r:5,  popDen:25000},
+  {name:'Koramangala',   cx:26, cy:32, r:5,  popDen:32000},
+  {name:'Whitefield',    cx:48, cy:20, r:6,  popDen:20000},
+  {name:'Electronic City',cx:44,cy:50,r:5,  popDen:18000},
+  {name:'Indiranagar',   cx:32, cy:24, r:4,  popDen:30000},
+  {name:'Hebbal',        cx:22, cy:10, r:4,  popDen:22000},
+];
+
+// ── SCENARIOS ────────────────────────────────────────
+const SCENARIOS = [
+  {
+    name:'Normal Monsoon', type:'natural',
+    rainfall:12, duration:8, saturation:50, drainCap:80,
+    rainfallMap: null,
+    lakeSurge: [],
+    desc:'~96 mm over 8h (12 mm/hr). Low-lying pockets pond; most drains cope.'
+  },
+  {
+    name:'Bellandur Lake Overflow', type:'natural',
+    rainfall:18, duration:10, saturation:75, drainCap:50,
+    lakeSurge: [{cx:36,cy:42,r:5,vol:8}],
+    desc:'~180 mm over 10h plus lake breach. Water backs into HSR Layout and Marathahalli.'
+  },
+  {
+    name:'2022 Bengaluru Replay', type:'natural',
+    rainfall:6, duration:24, saturation:90, drainCap:30,
+    lakeSurge: [{cx:36,cy:42,r:5,vol:12},{cx:10,cy:44,r:3,vol:6}],
+    desc:'Historical: ~135 mm in 24h (6 mm/hr avg). Multiple lakes overflow — Bellandur, HSR, Marathahalli.'
+  },
+  {
+    name:'Extreme Cloudburst', type:'natural',
+    rainfall:83, duration:2, saturation:95, drainCap:15,
+    lakeSurge: [{cx:36,cy:42,r:5,vol:18},{cx:10,cy:44,r:3,vol:10},{cx:48,cy:12,r:3,vol:8}],
+    desc:'~166 mm in ~2h (peak ~83 mm/hr). Flash flooding across basins within hours.'
+  },
+  {
+    name:'KRS Dam Surge', type:'manmade',
+    rainfall:3, duration:4, saturation:60, drainCap:70,
+    lakeSurge: [{cx:5,cy:55,r:6,vol:30}], // surge from south
+    manmade:{
+      cause:'KRS Dam structural failure, Mandya district',
+      trigger:'Sudden uncontrolled release of 49 TMC stored water into Cauvery river system',
+      risk:'Surge 8–12m above normal. No weather warning — sudden onset. Cauvery floodplain zones at immediate risk.',
+      response:'Immediate evacuation all zones within 5km of Cauvery. Electronic City and south Bengaluru priority.'
+    },
+    desc:'Dam breach generates a flood surge independent of rainfall. Water arrives fast from south.'
+  },
+  {
+    name:'Urban Drain Failure', type:'manmade',
+    rainfall:10, duration:6, saturation:70, drainCap:5,
+    lakeSurge: [],
+    manmade:{
+      cause:'Stormwater drains blocked: construction debris, solid waste, illegal encroachment',
+      trigger:'Even ~60 mm over 6h cannot drain — accumulates in Koramangala, BTM, Indiranagar underpasses',
+      risk:'Flash flooding in low-lying roads within minutes. Road underpasses become death traps.',
+      response:'Avoid all underpasses. Use elevated NH-44. BBMP must clear drains before next monsoon.'
+    },
+    desc:'Drain capacity near zero — moderate rainfall causes catastrophic local flooding. Shows civic failure impact.'
+  }
+];
+
+// ── STATE ─────────────────────────────────────────────
+let elevation, landMap;
+let waterDepth = [];
+let barriers = [];
+let blockedDrain = [];
+let simRunning=false, simPaused=false, animFrame=null;
+let step=0, simMinutes=0, lastStepTime=0;
+let currentScenario=0, currentTool='rain';
+let simSpeedMult=3;
+let rainfallIntensity=12, simDurationH=8, drainCapacity=80, soilSaturation=50;
+let depthHistory=[];
+let prevFlooded=0;
+let ewIssued=false;
+let cumulativeRainMm=0;
+
+let canvas, ctx, cellW, cellH, depthCtx;
+
+// ── INIT ──────────────────────────────────────────────
+function initGrid() {
+  elevation = buildElevationMap();
+  landMap   = buildLandMap();
+  waterDepth = [];
+  barriers   = [];
+  blockedDrain = [];
+  cumulativeRainMm = 0;
+  for (let y=0;y<GH;y++) {
+    waterDepth[y]=[];
+    barriers[y]=[];
+    blockedDrain[y]=[];
+    for (let x=0;x<GW;x++) {
+      waterDepth[y][x]=0;
+      barriers[y][x]=false;
+      blockedDrain[y][x]=false;
+      // Lakes start with some water
+      if (landMap[y][x]===LT.LAKE) waterDepth[y][x]=0.5;
+    }
+  }
+}
+
+function minutesPerStep() { return simSpeedMult * 3; }
+
+function scsRunoffMm(intensityMmHr, durationHr, satPct, drainPct) {
+  const P = intensityMmHr * durationHr;
+  if (P <= 0) return 0;
+  const cn = Math.min(99, 74 + (satPct / 100) * 18 - (drainPct / 100) * 8);
+  const S = (25400 / cn) - 254;
+  const Ia = 0.2 * S;
+  if (P <= Ia) return 0;
+  return ((P - Ia) ** 2) / (P + 0.8 * S);
+}
+
+// ── PHYSICS STEP ─────────────────────────────────────
+function stepSimulation() {
+  const sc = SCENARIOS[currentScenario];
+  const newDepth = waterDepth.map(r=>[...r]);
+  const satFactor = soilSaturation / 100;
+  const mins = minutesPerStep();
+  const rainEventActive = simMinutes < simDurationH * 60;
+  let mmThisStep = 0;
+  if (rainEventActive) {
+    mmThisStep = rainfallIntensity * (mins / 60);
+    cumulativeRainMm += mmThisStep;
+    const rainfallMetres = mmThisStep / 1000;
+    for (let y=0;y<GH;y++) {
+      for (let x=0;x<GW;x++) {
+        const lt = landMap[y][x];
+        if (lt===LT.LAKE) continue;
+        const absorb = LT_ABSORB[lt] * (1 - satFactor);
+        let runoff = rainfallMetres * (1 - absorb);
+        if (lt===LT.ROAD) runoff *= 0.85;
+        newDepth[y][x] += runoff;
+      }
+    }
+  }
+
+  // 2. LAKE SURGE (scenario-specific initial injection)
+  if (step < 3 && sc.lakeSurge) {
+    for (const surge of sc.lakeSurge) {
+      for (let dy=-surge.r;dy<=surge.r;dy++) {
+        for (let dx=-surge.r;dx<=surge.r;dx++) {
+          const nx=surge.cx+dx, ny=surge.cy+dy;
+          if (nx<0||nx>=GW||ny<0||ny>=GH) continue;
+          if (dist(dx,dy,0,0)<surge.r) {
+            newDepth[ny][nx] += surge.vol * (1-dist(dx,dy,0,0)/surge.r) * 0.1;
+          }
+        }
+      }
+    }
+  }
+
+  // 3. WATER FLOWS downhill to neighbours
+  for (let y=0;y<GH;y++) {
+    for (let x=0;x<GW;x++) {
+      const depth = waterDepth[y][x];
+      if (depth < 0.01) continue;
+      if (barriers[y][x]) continue;
+
+      const surfaceH = elevation[y][x] + depth;
+      let totalFlow = 0;
+
+      // Check 4 neighbours (cardinal — more stable than Moore)
+      const nbrs = [];
+      for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const nx=x+dx, ny=y+dy;
+        if (nx<0||nx>=GW||ny<0||ny>=GH) continue;
+        if (barriers[ny][nx]) continue;
+        const nSurfH = elevation[ny][nx] + waterDepth[ny][nx];
+        const grad = surfaceH - nSurfH;
+        if (grad > 0.005) nbrs.push({nx,ny,grad});
+      }
+
+      if (nbrs.length === 0) continue;
+
+      // Distribute flow proportionally to gradient
+      const totalGrad = nbrs.reduce((s,n)=>s+n.grad,0);
+      for (const nb of nbrs) {
+        // Flow rate: proportional to gradient, limited by available depth
+        const flowFrac = Math.min(0.25, (nb.grad/totalGrad) * 0.35);
+        const flow = Math.min(depth * flowFrac, depth * 0.4 / nbrs.length);
+        if (flow > 0) {
+          newDepth[y][x]    -= flow;
+          newDepth[nb.ny][nb.nx] += flow;
+          totalFlow += flow;
+        }
+      }
+
+      const localDrain = blockedDrain[y][x] ? 0 : (drainCapacity / 100);
+      if (landMap[y][x]===LT.ROAD) {
+        newDepth[y][x] = Math.max(0, newDepth[y][x] - 0.012 * localDrain);
+      } else {
+        newDepth[y][x] = Math.max(0, newDepth[y][x] - 0.004 * localDrain * (0.5 + satFactor));
+      }
+    }
+  }
+
+  // 4. Clamp negatives
+  for (let y=0;y<GH;y++)
+    for (let x=0;x<GW;x++)
+      if (newDepth[y][x]<0) newDepth[y][x]=0;
+
+  waterDepth = newDepth;
+  step++;
+  simMinutes = step * minutesPerStep();
+  const phase = document.getElementById('rainPhase');
+  if (phase) {
+    const active = simMinutes < simDurationH * 60;
+    phase.textContent = active ? 'rain active' : 'rain ended — drainage only';
+    phase.style.color = active ? 'var(--gn)' : 'var(--am)';
+  }
+}
+
+// ── RENDER ────────────────────────────────────────────
+function getFloodColor(depth, landType) {
+  if (depth < 0.02) return LT_COLORS[landType]; // dry
+  if (depth < 0.3)  return '#003366'; // ankle deep
+  if (depth < 1.0)  return '#0044bb'; // knee
+  if (depth < 2.0)  return '#0033ee'; // waist
+  if (depth < 4.0)  return '#1100cc'; // deep
+  return '#220044'; // catastrophic
+}
+
+function render() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for (let y=0;y<GH;y++) {
+    for (let x=0;x<GW;x++) {
+      const depth = waterDepth[y][x];
+      const lt    = landMap[y][x];
+
+      let color;
+      if (barriers[y][x]) {
+        color = '#aa8800';
+      } else if (lt===LT.LAKE) {
+        color = depth > 2 ? '#220044' : depth > 0.5 ? '#003388' : '#0a1820';
+      } else {
+        color = getFloodColor(depth, lt);
+      }
+
+      ctx.fillStyle = color;
+      ctx.fillRect(x*cellW, y*cellH, cellW, cellH);
+
+      // Subtle cell borders
+      if (cellW > 5) {
+        ctx.strokeStyle='rgba(0,0,0,0.18)';
+        ctx.lineWidth=0.4;
+        ctx.strokeRect(x*cellW,y*cellH,cellW,cellH);
+      }
+    }
+  }
+
+  // Ripple effect on deep water
+  for (let y=0;y<GH;y++) {
+    for (let x=0;x<GW;x++) {
+      if (waterDepth[y][x]>1.5) {
+        const cx2=x*cellW+cellW/2, cy2=y*cellH+cellH/2;
+        const grd=ctx.createRadialGradient(cx2,cy2,0,cx2,cy2,cellW*1.5);
+        grd.addColorStop(0,'rgba(0,120,255,0.2)');
+        grd.addColorStop(1,'rgba(0,120,255,0)');
+        ctx.fillStyle=grd;
+        ctx.fillRect((x-1)*cellW,(y-1)*cellH,cellW*3,cellH*3);
+      }
+    }
+  }
+
+  drawZoneLabels();
+  drawRainfallIndicator();
+}
+
+const ZONE_LABELS=[
+  {label:'Bellandur',    x:36, y:44, color:'rgba(0,180,255,.85)'},
+  {label:'HSR Layout',   x:26, y:40, color:'rgba(0,210,255,.7)'},
+  {label:'Marathahalli', x:42, y:30, color:'rgba(0,210,255,.7)'},
+  {label:'Koramangala',  x:26, y:32, color:'rgba(0,210,255,.7)'},
+  {label:'Whitefield',   x:48, y:20, color:'rgba(0,210,255,.65)'},
+  {label:'Elec. City',   x:44, y:50, color:'rgba(0,210,255,.65)'},
+  {label:'Indiranagar',  x:32, y:24, color:'rgba(0,210,255,.65)'},
+  {label:'Hebbal',       x:22, y:10, color:'rgba(0,210,255,.65)'},
+];
+
+function drawZoneLabels() {
+  ctx.save();
+  ctx.font=`bold ${Math.max(7,cellW*0.55)}px 'JetBrains Mono'`;
+  ctx.textAlign='center';
+  for (const z of ZONE_LABELS) {
+    const px=z.x*cellW+cellW/2, py=z.y*cellH;
+    ctx.fillStyle='rgba(0,0,0,0.5)';
+    ctx.fillText(z.label,px+1,py+1);
+    ctx.fillStyle=z.color;
+    ctx.fillText(z.label,px,py);
+  }
+  ctx.restore();
+}
+
+function drawRainfallIndicator() {
+  // Show rainfall intensity in top-right
+  const px=canvas.width-50, py=50, r=28;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(px,py,r,0,Math.PI*2);
+  ctx.fillStyle='rgba(2,12,27,.85)';
+  ctx.fill();
+  ctx.strokeStyle='rgba(0,150,255,0.4)';
+  ctx.lineWidth=1;
+  ctx.stroke();
+  ctx.font='bold 8px JetBrains Mono';
+  ctx.textAlign='center';
+  ctx.fillStyle='rgba(0,180,255,.8)';
+  ctx.fillText('RAIN',px,py-4);
+  ctx.fillText(rainfallIntensity+'mm',px,py+8);
+  ctx.restore();
+}
+
+// ── STATS ─────────────────────────────────────────────
+function updateStats() {
+  let flooded=0, totalDepth=0, maxDepth=0;
+
+  for (let y=0;y<GH;y++) {
+    for (let x=0;x<GW;x++) {
+      const d=waterDepth[y][x];
+      if (d>0.1) {
+        flooded++;
+        totalDepth+=d;
+        if (d>maxDepth) maxDepth=d;
+      }
+    }
+  }
+  const avgDepth=flooded>0?(totalDepth/flooded):0;
+  const area=(flooded*CELL_KM2).toFixed(2);
+  const spreadRate=Math.max(0,flooded-prevFlooded);
+  prevFlooded=flooded;
+
+  document.getElementById('sTotalFlooded').textContent=flooded;
+  document.getElementById('sArea').textContent=area+' km²';
+  document.getElementById('sMaxDepth').textContent=maxDepth.toFixed(1)+' m';
+  document.getElementById('sAvgDepth').textContent=avgDepth.toFixed(1)+' m';
+  document.getElementById('sSpread').textContent=spreadRate+' cells/min';
+  document.getElementById('sTime').textContent=simMinutes+' min';
+
+  // Timer
+  const h=Math.floor(simMinutes/60),m=simMinutes%60,s=(step*2)%60;
+  document.getElementById('simTimer').textContent=
+    `T+${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} · STEP ${step}`;
+
+  // Peak
+  if (maxDepth>3) {
+    document.getElementById('sPeak').textContent='CATASTROPHIC';
+    document.getElementById('sPeak').className='st-val crit';
+  } else if (maxDepth>1.5) {
+    document.getElementById('sPeak').textContent='SEVERE';
+    document.getElementById('sPeak').className='st-val warn';
+  } else if (maxDepth>0.5) {
+    document.getElementById('sPeak').textContent='MODERATE';
+    document.getElementById('sPeak').className='st-val water';
+  } else {
+    document.getElementById('sPeak').textContent='LOW';
+    document.getElementById('sPeak').className='st-val safe';
+  }
+
+  const runoffEst = scsRunoffMm(rainfallIntensity, simDurationH, soilSaturation, drainCapacity);
+  const g = id => document.getElementById(id);
+  if (g('hIntensity')) g('hIntensity').textContent = `${rainfallIntensity} mm/hr × ${simDurationH}h`;
+  if (g('hApplied')) g('hApplied').textContent = cumulativeRainMm.toFixed(1) + ' mm';
+  if (g('hRunoff')) g('hRunoff').textContent = runoffEst.toFixed(1) + ' mm (SCS est.)';
+  if (g('hSat')) g('hSat').textContent = soilSaturation + '%';
+  if (g('hDrain')) g('hDrain').textContent = drainCapacity + '%';
+
+  // Zone status
+  updateZoneStatus(maxDepth);
+
+  // Early warning
+  updateEarlyWarning(flooded, maxDepth);
+
+  // Chart
+  if (step%4===0) {
+    depthHistory.push({step, flooded, maxDepth:+maxDepth.toFixed(2)});
+    if (depthHistory.length>40) depthHistory.shift();
+    drawDepthChart();
+  }
+}
+
+function updateZoneStatus(globalMax) {
+  const zoneStatusEl = document.getElementById('zoneStatus');
+  let html='';
+  for (const z of ZONES) {
+    let maxD=0, totalD=0, count=0;
+    for (let dy=-z.r;dy<=z.r;dy++) {
+      for (let dx=-z.r;dx<=z.r;dx++) {
+        const nx=z.cx+dx, ny=z.cy+dy;
+        if (nx<0||nx>=GW||ny<0||ny>=GH) continue;
+        if (dist(dx,dy,0,0)<z.r) {
+          const d=waterDepth[ny][nx];
+          if (d>maxD) maxD=d;
+          totalD+=d; count++;
+        }
+      }
+    }
+    const avgD=count>0?totalD/count:0;
+    let statusClass, statusText;
+    if (maxD>2)       { statusClass='zs-crit'; statusText='CRITICAL'; }
+    else if (maxD>1)  { statusClass='zs-flood'; statusText='FLOODING'; }
+    else if (maxD>0.3){ statusClass='zs-watch'; statusText='WATCH'; }
+    else              { statusClass='zs-safe'; statusText='SAFE'; }
+    html+=`<div class="zone-row">
+      <div><div class="zone-name">${z.name}</div><div class="zone-depth">${maxD>0.05?'max '+maxD.toFixed(1)+'m':''}</div></div>
+      <span class="zone-status ${statusClass}">${statusText}</span>
+    </div>`;
+  }
+  zoneStatusEl.innerHTML=html;
+}
+
+function updateEarlyWarning(flooded, maxDepth) {
+  const ewEl=document.getElementById('ewStatus');
+  const ewAlert=document.getElementById('ewAlert');
+  const alerts=[];
+  if (!simRunning&&step===0) {
+    alerts.push({type:'safe',msg:'Set rainfall sliders or pick a scenario, then Start. Parameters apply every step.'});
+  }
+  if (flooded>50&&!ewIssued) {
+    ewIssued=true;
+    ewAlert.classList.add('show');
+    setTimeout(()=>ewAlert.classList.remove('show'),6000);
+  }
+  if (maxDepth>3)   alerts.push({type:'danger',msg:'🔴 EXTREME FLOOD: Water depth >3m. Immediate full evacuation.'});
+  if (maxDepth>1.5) alerts.push({type:'danger',msg:'🔴 SEVERE FLOOD: Road access blocked. Emergency boats deployed.'});
+  if (maxDepth>0.5) alerts.push({type:'warn',  msg:'🟡 FLOOD WARNING: Move to higher ground. Avoid low roads.'});
+  if (flooded>100)  alerts.push({type:'warn',  msg:`⚠ ${flooded} cells inundated. ${Math.round(flooded*45*4.2/1000)}K people displaced.`});
+  if (SCENARIOS[currentScenario].type==='manmade') {
+    alerts.push({type:'info',msg:'⚙ MANMADE EVENT: Standard rainfall models may underestimate this scenario.'});
+  }
+  if (flooded===0&&step>5) alerts.push({type:'safe',msg:'✅ No significant flooding. Drainage is coping with rainfall.'});
+  ewEl.innerHTML=alerts.length
+    ? alerts.map(a=>`<div class="alert-box ${a.type==='danger'?'':a.type}">${a.msg}</div>`).join('')
+    : '<div class="alert-box safe">Monitoring... conditions stable.</div>';
+}
+
+function drawDepthChart() {
+  if (!depthCtx) depthCtx=document.getElementById('depthChart').getContext('2d');
+  const c=depthCtx;
+  const w=c.canvas.width=c.canvas.offsetWidth;
+  const h=c.canvas.height=90;
+  c.clearRect(0,0,w,h);
+  if (depthHistory.length<2) return;
+  const maxF=Math.max(...depthHistory.map(d=>d.flooded),1);
+  const pad={l:4,r:4,t:6,b:6};
+
+  // Flooded cells area fill
+  c.beginPath();
+  depthHistory.forEach((d,i)=>{
+    const x=pad.l+(i/(depthHistory.length-1))*(w-pad.l-pad.r);
+    const y=pad.t+(1-d.flooded/maxF)*(h-pad.t-pad.b);
+    i===0?c.moveTo(x,y):c.lineTo(x,y);
+  });
+  c.lineTo(w-pad.r,h-pad.b);
+  c.lineTo(pad.l,h-pad.b);
+  c.closePath();
+  const grad=c.createLinearGradient(0,0,0,h);
+  grad.addColorStop(0,'rgba(0,100,255,0.5)');
+  grad.addColorStop(1,'rgba(0,100,255,0.04)');
+  c.fillStyle=grad;
+  c.fill();
+
+  // Line
+  c.beginPath();
+  depthHistory.forEach((d,i)=>{
+    const x=pad.l+(i/(depthHistory.length-1))*(w-pad.l-pad.r);
+    const y=pad.t+(1-d.flooded/maxF)*(h-pad.t-pad.b);
+    i===0?c.moveTo(x,y):c.lineTo(x,y);
+  });
+  c.strokeStyle='#0088ff';
+  c.lineWidth=1.5;
+  c.stroke();
+}
+
+// ── SIMULATION LOOP ───────────────────────────────────
+function simLoop(ts) {
+  if (!simRunning||simPaused) return;
+  const interval=Math.max(50,320-simSpeedMult*28);
+  if (ts-lastStepTime>interval) {
+    stepSimulation();
+    render();
+    updateStats();
+    lastStepTime=ts;
+  }
+  animFrame=requestAnimationFrame(simLoop);
+}
+
+// ── CONTROLS ──────────────────────────────────────────
+function selectScenario(i) {
+  currentScenario=i;
+  document.querySelectorAll('.scenario-btn').forEach((b,j)=>b.classList.toggle('active',j===i));
+  const sc=SCENARIOS[i];
+  document.getElementById('sl-rain').value=sc.rainfall;
+  document.getElementById('sl-dur').value=sc.duration;
+  document.getElementById('sl-sat').value=sc.saturation;
+  document.getElementById('sl-drain').value=sc.drainCap;
+  updateParams();
+  // Show manmade info
+  const mmBox=document.getElementById('mmBox');
+  if (sc.manmade) {
+    mmBox.classList.add('show');
+    document.getElementById('mm-cause').textContent=sc.manmade.cause;
+    document.getElementById('mm-trigger').textContent=sc.manmade.trigger;
+    document.getElementById('mm-risk').textContent=sc.manmade.risk;
+    document.getElementById('mm-response').textContent=sc.manmade.response;
+  } else {
+    mmBox.classList.remove('show');
+  }
+  resetSim();
+}
+
+function startSim() {
+  if (!simRunning) {
+    simRunning=true; simPaused=false; ewIssued=false;
+    document.getElementById('btnStart').style.display='none';
+    document.getElementById('btnPause').style.display='block';
+    document.getElementById('pauseOverlay').classList.remove('show');
+    animFrame=requestAnimationFrame(simLoop);
+    const ewBtn=document.getElementById('btnSendEW'); if(ewBtn) ewBtn.disabled=false;
+  }
+}
+
+function pauseSim() {
+  if (simRunning) {
+    simPaused=!simPaused;
+    document.getElementById('btnPause').textContent=simPaused?'▶  RESUME':'⏸  PAUSE';
+    document.getElementById('pauseOverlay').classList.toggle('show',simPaused);
+    if (!simPaused) animFrame=requestAnimationFrame(simLoop);
+  }
+}
+
+function resetSim() {
+  simRunning=false; simPaused=false; ewIssued=false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  step=0; simMinutes=0; depthHistory=[]; prevFlooded=0;
+  initGrid();
+  document.getElementById('btnStart').style.display='block';
+  document.getElementById('btnPause').style.display='none';
+  document.getElementById('btnPause').textContent='⏸  PAUSE';
+  document.getElementById('pauseOverlay').classList.remove('show');
+  document.getElementById('ewAlert').classList.remove('show');
+  render(); updateStats();
+}
+
+function updateParams() {
+  rainfallIntensity = +document.getElementById('sl-rain').value;
+  simDurationH      = +document.getElementById('sl-dur').value;
+  soilSaturation    = +document.getElementById('sl-sat').value;
+  drainCapacity     = +document.getElementById('sl-drain').value;
+  simSpeedMult      = +document.getElementById('sl-speed').value;
+  document.getElementById('sv-rain').textContent  = rainfallIntensity+' mm/hr';
+  document.getElementById('sv-dur').textContent   = simDurationH+'h';
+  document.getElementById('sv-sat').textContent   = soilSaturation+'%';
+  document.getElementById('sv-drain').textContent = drainCapacity+'%';
+  document.getElementById('sv-speed').textContent = simSpeedMult+'×';
+  const budget = rainfallIntensity * simDurationH;
+  const rb = document.getElementById('rainBudget');
+  if (rb) rb.textContent = budget + ' mm';
+  const rrl = document.getElementById('rainRateLabel');
+  if (rrl) rrl.textContent = rainfallIntensity + ' mm/hr';
+  const sml = document.getElementById('stepMinLabel');
+  if (sml) sml.textContent = minutesPerStep() + ' min';
+  const minsPerStep = minutesPerStep();
+  const approxSecsPerStep = Math.max(50, 320 - simSpeedMult*28) / 1000;
+  const realMinsPerSec = Math.round(minsPerStep / approxSecsPerStep);
+  const tcEl = document.getElementById('tcRate');
+  const tcStepEl = document.getElementById('tcStep');
+  if (tcEl) tcEl.textContent = `1 sec ≈ ${realMinsPerSec} real min`;
+  if (tcStepEl) tcStepEl.textContent = minsPerStep;
+  const phase = document.getElementById('rainPhase');
+  if (phase) {
+    const active = !simRunning || simMinutes < simDurationH * 60;
+    phase.textContent = active ? 'rain active' : 'rain ended — drainage only';
+    phase.style.color = active ? 'var(--gn)' : 'var(--am)';
+  }
+  if (simRunning) { render(); updateStats(); }
+  else { render(); updateStats(); }
+}
+
+function setTool(t) {
+  currentTool=t;
+  document.querySelectorAll('.tool-chip').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tool-'+t).classList.add('active');
+  const hints={
+    rain:'Click on map to add intense local rainfall burst to any area',
+    drain:'Click cells to toggle blocked storm drain (no drainage there — water ponds)',
+    barrier:'Click/drag to place sandbag barriers — redirects water flow',
+    inspect:'Click any cell to see water depth, land type, and elevation data'
+  };
+  document.getElementById('toolHint').textContent=hints[t];
+}
+
+// Canvas interaction
+function getCell(e) {
+  const rect=canvas.getBoundingClientRect();
+  const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+  const mx=(e.clientX-rect.left)*sx, my=(e.clientY-rect.top)*sy;
+  return {x:Math.floor(mx/cellW), y:Math.floor(my/cellH)};
+}
+let mouseDown=false;
+function handleClick(e) {
+  const {x,y}=getCell(e);
+  if (x<0||x>=GW||y<0||y>=GH) return;
+  if (currentTool==='rain') {
+    const burstMm = Math.min(15, rainfallIntensity * 0.15);
+    for (let dy=-2;dy<=2;dy++) for (let dx=-2;dx<=2;dx++) {
+      const nx=x+dx,ny=y+dy;
+      if (nx>=0&&nx<GW&&ny>=0&&ny<GH)
+        waterDepth[ny][nx]+=(burstMm/1000)*Math.max(0,1-dist(dx,dy,0,0)/2.5);
+    }
+    cumulativeRainMm += burstMm;
+  } else if (currentTool==='drain') {
+    blockedDrain[y][x]=!blockedDrain[y][x];
+  } else if (currentTool==='barrier') {
+    barriers[y][x]=!barriers[y][x];
+  } else if (currentTool==='inspect') {
+    const lt=landMap[y][x];
+    const ltN=['Residential','Commercial','Industrial','Slum','Road','Lake','Park','Forest'];
+    const d=waterDepth[y][x];
+    const e2=elevation[y][x];
+    alert(`Cell (${x}, ${y})\nElevation: ${e2.toFixed(0)} m ASL\nLand: ${ltN[lt]}\nWater depth: ${d.toFixed(2)} m (${(d*1000).toFixed(0)} mm)\nDrain: ${blockedDrain[y][x]?'BLOCKED':'normal'}\nBarrier: ${barriers[y][x]?'yes':'no'}`);
+  }
+  if (!simRunning) render();
+  updateStats();
+}
+
+// ── SETUP ─────────────────────────────────────────────
+function setupCanvas() {
+  canvas=document.getElementById('floodCanvas');
+  ctx=canvas.getContext('2d');
+  const wrap=document.getElementById('canvasWrap');
+  const size=Math.min(wrap.clientWidth-20, wrap.clientHeight-20);
+  canvas.width=size; canvas.height=size;
+  cellW=size/GW; cellH=size/GH;
+  canvas.addEventListener('mousedown',e=>{mouseDown=true;handleClick(e);});
+  canvas.addEventListener('mousemove',e=>{if(mouseDown)handleClick(e);});
+  document.addEventListener('mouseup',()=>mouseDown=false);
+  initGrid();
+  selectScenario(0);
+  updateParams();
+  render();
+  updateStats();
+}
+
+// ── SEND TO EARLY WARNING COMMAND ─────────────────────────────────
+async function sendToEarlyWarning() {
+  const btn = document.getElementById('btnSendEW');
+  btn.disabled = true;
+  btn.textContent = '⏳  SENDING...';
+
+  // Collect zone statuses
+  let highRiskZones = [];
+  const zoneRows = document.querySelectorAll('#zoneStatus .zone-row');
+  zoneRows.forEach(row => {
+    const name = row.querySelector('.zone-name')?.textContent;
+    const status = row.querySelector('.zone-status')?.textContent?.trim();
+    if (status && status !== 'SAFE') highRiskZones.push({zone: name, status});
+  });
+
+  const payload = {
+    source: 'flood_simulation',
+    scenario: SCENARIOS[currentScenario]?.name || 'Unknown',
+    scenario_type: SCENARIOS[currentScenario]?.type || 'natural',
+    sim_minutes: simMinutes,
+    flooded_cells: +document.getElementById('sTotalFlooded').textContent,
+    area_flooded_km2: parseFloat(document.getElementById('sArea').textContent),
+    max_depth_m: parseFloat(document.getElementById('sMaxDepth').textContent),
+    rainfall_mm_hr: rainfallIntensity,
+    rainfall_total_mm: Math.round(rainfallIntensity * simDurationH),
+    cumulative_rain_mm: Math.round(cumulativeRainMm),
+    high_risk_zones: highRiskZones,
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    await fetch('/api/simulation/push-alert', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+  } catch(e) {}
+
+  // Store for Early Warning page to read
+  try { sessionStorage.setItem('sim_alert', JSON.stringify(payload)); } catch(e) {}
+
+  const toast = document.getElementById('ewSentToast');
+  const zoneTxt = highRiskZones.length > 0
+    ? `${highRiskZones.length} zone(s) at risk flagged`
+    : 'No critical zones — monitoring active';
+  toast.textContent = `✅ "${payload.scenario}" pushed to Early Warning — ${zoneTxt}`;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 5000);
+
+  btn.textContent = '✅  ALERT SENT';
+  btn.style.color = 'var(--gn)';
+  btn.style.borderColor = 'var(--gn)';
+  setTimeout(() => {
+    btn.textContent = '📡  SEND ALERT TO EARLY WARNING';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+    btn.disabled = false;
+  }, 8000);
+}
+
+window.addEventListener('load',()=>setTimeout(setupCanvas,150));
+window.addEventListener('resize',()=>{if(!simRunning)setTimeout(setupCanvas,80);});
+</script>
+{% endblock %}
